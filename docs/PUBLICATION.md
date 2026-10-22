@@ -11,12 +11,14 @@
 ## Publier une release
 
 1. Dans [Releases](../../releases), cliquer sur **Draft a new release**.
-2. Créer un tag correspondant exactement à la version, par exemple `v2.3.3`, sur le bon commit.
+2. Créer un **nouveau tag préfixé par `v`**, par exemple **`v2.3.3`**, sur le bon commit (`2.3.3` seul est invalide).
 3. Publier comme version stable, et non comme préversion.
 4. Vérifier l'onglet **Actions**, le succès du workflow de fabrication et la présence de `audit-medias-v2.3.3.zip`.
 5. Vérifier que le ZIP contient **un seul dossier racine** `audit-medias/`.
 6. Tester l'installation ou le remplacement sur un site pilote avant toute diffusion.
 
-**Attention :** Le client de mise à jour GitHub est intégré à partir de la version 2.3.3 ; cette première version doit être installée manuellement.n automatique des mises à jour depuis GitHub. Cette fonction nécessitera une version ultérieure, installée au moins une fois sur les sites concernés.
+**Attention :** La première installation de la v2.3.3 est manuelle. Les versions ultérieures peuvent être détectées depuis WordPress grâce à `Update URI` et aux GitHub Releases publiques.
+
+**Téléchargement correct :** utiliser exclusivement l'asset **`audit-medias-vX.Y.Z.zip`** créé par GitHub Actions. Les liens automatiques **Source code (zip)** et **Source code (tar.gz)** ne conviennent **pas** à l'installation ou à la mise à jour de WordPress. Si aucun asset n'est présent, **ne pas publier/déployer** cette release : ouvrir **Actions**, contrôler les logs, et vérifier que le tag commence bien par `v`.
 
 Ne pas publier de secrets, fichiers clients, bases de données ni données personnelles. Inspecter aussi l'historique Git avant de rendre un dépôt public.
