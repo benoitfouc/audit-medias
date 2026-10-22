@@ -1,12 +1,14 @@
 <?php
-/* Isolated UI fixture, not a WordPress integration test. Never serve via HTTP. */
+/* Isolated UI fixture. Simulated WordPress, no HTTP or real media operations. */
 if (PHP_SAPI !== 'cli') { http_response_code(403); exit; }
 error_reporting(E_ALL);
 set_error_handler(function($level,$message,$file,$line){ throw new RuntimeException($message.' at '.$file.':'.$line); });
 parse_str(isset($argv[1]) ? $argv[1] : '', $_GET);
 define('ABSPATH', '/fixture/'); define('ARRAY_A','ARRAY_A');
-define('AMF_VERSION','2.3.4'); define('AMF_PAGE_SLUG','audit-medias');
+preg_match('/Version:\s*([0-9.]+)/',file_get_contents(__DIR__.'/../audit-medias.php'),$version);
+define('AMF_VERSION',$version[1]); define('AMF_PAGE_SLUG','audit-medias');
 define('AMF_PLUGIN_URL','./'); define('AMF_PLUGIN_FILE',__DIR__.'/../audit-medias.php');
+define('MINUTE_IN_SECONDS',60); define('HOUR_IN_SECONDS',3600);
 $GLOBALS['woo']=!isset($_GET['no_woo']);
 $GLOBALS['allow_delete']=!isset($_GET['readonly']);
 $GLOBALS['scan_current']=!isset($_GET['old_scan']);
@@ -36,6 +38,10 @@ function get_post_type_object($s){return (object)array('labels'=>(object)array('
 function is_post_type_viewable($v){return true;}
 function wp_upload_dir(){return array('baseurl'=>'/uploads','basedir'=>'/fixture/uploads');}
 function size_format($v,$d=0){return number_format($v/1024,1).' Ko';}
+function get_site_transient($key){return false;}
+function get_site_option($key,$default=false){return isset($_GET['update_error']) ? array('status'=>'rate_limited','checked_at'=>1792692000,'expires_at'=>1792693800,'http'=>403,'rate_limit'=>array('remaining'=>0,'reset'=>1792695600)) : $default;}
+function plugin_basename($path){return 'audit-medias/audit-medias.php';}
+function wp_date($format,$stamp){return gmdate($format,$stamp);}
 class wpdb {public $last_error=''; public $prefix='wp_'; function prepare($sql,...$args){return $sql;} function get_var($sql){return 3;} function get_results($sql,$type=null){return array();} function get_row($sql,$type=null){return array('used'=>2,'no_usage'=>1,'wc_absent'=>1);}}
 $GLOBALS['wpdb']=new wpdb();
 class AMF_Database {function table($n){return 'wp_amf_'.$n;} function get_latest_scan(){return $GLOBALS['scan'];}}
@@ -51,6 +57,7 @@ class AMF_Product_Usage {
 require __DIR__.'/../includes/class-amf-utils.php';
 require __DIR__.'/../includes/class-amf-usage-view.php';
 require __DIR__.'/../includes/class-amf-admin.php';
+require __DIR__.'/../includes/class-amf-updates.php';
 class Fixture_View extends AMF_Usage_View {
  function list_data($scan,$mode,$filters,$ready){
   if(isset($_GET['empty'])) return array('rows'=>array(),'total'=>0,'paged'=>1);
@@ -70,4 +77,4 @@ $prop=new ReflectionProperty(AMF_Admin::class,'usage_view');$prop->setAccessible
 ob_start();$admin->render_page();$html=ob_get_clean();
 $status=array('exists'=>(bool)$GLOBALS['scan'],'id'=>7,'status'=>isset($_GET['running'])?'running':'complete','phase'=>'files','phase_total'=>100,'phase_current'=>100);
 $data=array('ajaxUrl'=>'/fixture-ajax','nonce'=>'fixture-nonce','status'=>$status,'performance'=>array(),'presets'=>array(),'productIndex'=>$products->status(),'deletionEnabled'=>$actions->deletion_enabled(),'i18n'=>array('error'=>'Fixture error','confirmRestart'=>'Restart?','confirmDeleteFamily'=>'Delete?'));
-echo '<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Audit Medias - fixture UI</title><link rel="stylesheet" href="wp-fixture.css"><link rel="stylesheet" href="admin.css"><link rel="stylesheet" href="admin-tables.css"><link rel="stylesheet" href="admin-client.css"><body>'.$html.'<script src="jquery.js"></script><script>window.AMF_DATA='.json_encode($data).';</script><script src="admin.js"></script></body></html>';
+echo '<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Audit Medias - fixture UI</title><link rel="stylesheet" href="wp-fixture.css"><link rel="stylesheet" href="assets/admin.css"><link rel="stylesheet" href="assets/admin-tables.css"><link rel="stylesheet" href="assets/admin-client.css"><link rel="stylesheet" href="assets/admin-brand.css"><body>'.$html.'<script src="jquery.js"></script><script>window.AMF_DATA='.json_encode($data).';</script><script src="assets/admin.js"></script></body></html>';

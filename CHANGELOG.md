@@ -1,5 +1,12 @@
 # Historique des versions — Audit Médias
 
+## 2.3.5 — 22 octobre 2026
+- Identité Benfou : logo original, noir/blanc et accent #C0FA39, styles limités aux écrans du plugin.
+- Diagnostic des mises à jour : cache, dates, HTTP, quota, erreurs et version proposée par WordPress.
+- Vérification manuelle GitHub même si WordPress.org échoue, sans installation forcée ni modification des autres offres.
+- Publication reproductible, tests renforcés et outil de diagnostic temporaire pour les anciennes installations.
+- Aucun changement du moteur, de la base, des suppressions ou des actions groupées.
+
 ## 2.3.4 — 22 octobre 2026
 - Interface simplifiée : en-tête compact, onglet Médias centré sur les familles et suppression des explications répétées.
 - L'inventaire WordPress reste accessible dans Réglages > Technique / diagnostic, avec conservation des anciennes URL et des fiches détaillées.
