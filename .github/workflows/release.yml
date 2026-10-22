@@ -34,7 +34,7 @@ jobs:
           $header_ok = preg_match('/^[ \t]*\*[ \t]*Version:\s*([0-9.]+)/m', $source, $header);
           $constant_ok = preg_match("/define\(\s*'AMF_VERSION'\s*,\s*'([0-9.]+)'\s*\)/", $source, $constant);
           if (!$header_ok || !$constant_ok || $header[1] !== $constant[1] || 'v' . $header[1] !== getenv('RELEASE_TAG')) {
-              fwrite(STDERR, "Tag, Version et AMF_VERSION incohérents.\n");
+              fwrite(STDERR, "Le tag de release doit etre au format vX.Y.Z, par exemple v2.3.3, et correspondre a Version et AMF_VERSION.\n");
               exit(1);
           }
           echo "Version valide : {$header[1]}\n";
