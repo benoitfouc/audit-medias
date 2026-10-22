@@ -1,9 +1,10 @@
-"""Create the reproducible WordPress ZIP. No WordPress installation required."""
+"""Reproducible WordPress package; no network or production access."""
 import argparse
 import hashlib
 from pathlib import Path
 import re
 import zipfile
+
 
 def build(tag=None, output='dist'):
     root = Path(__file__).resolve().parents[1]

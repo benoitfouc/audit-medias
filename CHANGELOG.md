@@ -1,5 +1,13 @@
 # Historique des versions — Audit Médias
 
+## 2.3.6 — 22 octobre 2026
+- Remplacement de l’API REST GitHub par un manifeste statique public avec une source de secours. Aucun jeton sur les sites.
+- Validation du manifeste et du ZIP : slug, canal stable, tag, URL officielle, taille et SHA-256 avant extraction.
+- Cache positif d’une heure, cache négatif de dix minutes et respect de Retry-After.
+- Publication atomique du canal statique après vérification publique du ZIP. Archives publiées immuables.
+- Outil de transition temporaire pour proposer la vraie mise à jour aux versions 2.3.3 à 2.3.5, sans modifier leurs fichiers ni forcer l’installation.
+- Interface Benfou, moteur, réglages, résultats et protections de suppression inchangés.
+
 ## 2.3.5 — 22 octobre 2026
 - Identité Benfou : logo original, noir/blanc et accent #C0FA39, styles limités aux écrans du plugin.
 - Diagnostic des mises à jour : cache, dates, HTTP, quota, erreurs et version proposée par WordPress.
