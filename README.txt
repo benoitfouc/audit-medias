@@ -1,3 +1,29 @@
+Audit Médias — 2.3.3
+====================
+Auteur : Benfou, https://www.benfou.fr/
+
+NOUVEAUTÉS
+----------
+- Nouvelle présentation plus lisible, états de sécurité et navigation guidée.
+- Suppression directe protégée lorsque des fichiers dérivés sont référencés par URL.
+- Contrôle des nouveaux fichiers et sauvegardes enregistrés par WordPress.
+- Mise à jour depuis GitHub Releases publiques, sans jeton GitHub par site.
+- Pas de suppression automatique. Ne pas supprimer sans sauvegarde complète.
+
+MISE À JOUR
+-----------
+Depuis 2.3.2, installer une première fois ce ZIP pour activer le mécanisme
+de mises à jour. Pour les prochaines versions publiées via GitHub Releases,
+WordPress et les outils utilisant son mécanisme de mise à jour pourront
+détecter la nouvelle version. Le ZIP public doit être un asset GitHub
+nommé audit-medias-vX.Y.Z.zip, avec un dossier racine audit-medias.
+
+Les réglages, résultats, tables de scan et données existantes sont conservés.
+Les références et fichiers peuvent évoluer après le scan : contrôler
+manuellement et relancer l'analyse avant les suppressions importantes.
+
+INFORMATIONS DÉTAILLÉES DE LA VERSION PRÉCÉDENTE
+================================================
 Audit Médias - 2.3.2
 =====================
 Auteur : Benfou - https://www.benfou.fr/
