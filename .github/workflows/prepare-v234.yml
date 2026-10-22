@@ -27,6 +27,9 @@ jobs:
           root = pathlib.Path('.').resolve()
           parts = ['.github/amf-v234.delta.00.b64', '.github/amf-v234.delta.01.b64', '.github/amf-v234.delta.02.b64', '.github/amf-v234.delta.b64']
           packed = ''.join(''.join((root / part).read_text().split()) for part in parts)
+          # Repair two transport-only transcription mistakes; the complete
+          # decoded payload MUST still match the locally tested SHA-256.
+          packed = packed.replace('IHs5s749ePHNN4f', 'IHs5sHT749ePHN4f').replace('PZAO11Pfdt', 'PZAO1Pfdt')
           raw = zlib.decompress(base64.b64decode(packed, validate=True))
           assert hashlib.sha256(raw).hexdigest() == 'dd3e7ee41e2e03deb18bc03eeb8ad2a3eea77ed4933f3947f474628880340f0b'
           payload = json.loads(raw)
