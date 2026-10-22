@@ -5,6 +5,7 @@
     var current = AMF_DATA.status || { exists: false };
     var retryCount = 0;
     var maxRetries = 5;
+    var familyBulkBusy = false;
     var performance = $.extend({}, AMF_DATA.performance || {});
 
     function setButtons() {
@@ -18,8 +19,8 @@
         if (!status || !status.exists) return '';
         if (status.status === 'complete') return 'Analyse terminée.';
         if (status.status === 'error') return status.message || 'Le dernier lot a rencontré une erreur. Cliquez sur « Reprendre ».';
-        if (!running) return 'Le scan est enregistré mais aucun lot n’est traité actuellement dans ce navigateur. Cliquez sur « Reprendre » pour continuer.';
-        return 'Analyse par lots en cours.';
+        if (!running) return 'Progression enregistrée. Cliquez sur « Reprendre » pour continuer.';
+        return 'Analyse en cours. Gardez cet onglet ouvert pour la faire avancer.';
     }
 
     function render(status) {
@@ -29,12 +30,14 @@
         var done = parseInt(status.phase_current || 0, 10);
         var pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : (status.status === 'complete' ? 100 : 12);
         $('#amf-progress').attr('data-scan-id', status.id);
-        $('#amf-phase-label').text(status.phase_label || status.phase || 'Analyse');
+        var phaseNames = { media: 'Inventaire des médias', usage_posts: 'Recherche des utilisations', usage_postmeta: 'Recherche des utilisations', usage_termmeta: 'Recherche des utilisations', usage_options: 'Recherche des utilisations', files: 'Vérification des fichiers', woo: 'Vérification des produits', finalize: 'Finalisation' };
+        var phaseLabel = status.status === 'complete' ? 'Analyse terminée' : (phaseNames[status.phase] || 'Analyse en cours');
+        $('#amf-phase-label').text(phaseLabel);
         $('#amf-progress-bar').css('width', pct + '%').toggleClass('amf-indeterminate', total === 0 && status.status !== 'complete' && running);
-        $('#amf-progress-track').attr('aria-valuenow', pct).attr('aria-valuetext', (status.phase_label || 'Analyse') + ' : ' + pct + ' %');
+        $('#amf-progress-track').attr('aria-valuenow', pct).attr('aria-valuetext', phaseLabel + ' : ' + pct + ' %');
         $('#amf-scan-state').text(status.status === 'complete' ? 'Terminée' : (running ? 'En cours' : 'À reprendre'));
         $('#amf-progress-numbers').text(total > 0 ? (done + ' / ' + total) : (done ? done + ' éléments analysés' : ''));
-        $('#amf-progress-message').text(status.message || defaultMessage(status));
+        $('#amf-progress-message').text(defaultMessage(status));
         var batch = parseInt(status.batch_limit || 0, 10);
         var delay = parseInt((performance && performance.request_delay_ms) || status.request_delay_ms || 0, 10);
         var maxTime = parseInt((performance && performance.time_budget_seconds) || status.time_budget_seconds || 0, 10);
@@ -321,6 +324,7 @@
     });
 
     $(document).on('click', '.amf-delete-family', function () {
+        if (familyBulkBusy) return;
         var button = $(this);
         var flags = familyRisk(button);
         var risk = {
@@ -363,12 +367,12 @@
         var selected = selectedFamilyCheckboxes();
         var all = $('.amf-family-select-all');
         var count = selected.length;
-        var action = $('#amf-family-bulk-action').val();
+        var action = $('.amf-family-bulk-action').first().val();
 
         all.prop('checked', enabled.length > 0 && count === enabled.length);
         all.prop('indeterminate', count > 0 && count < enabled.length);
         $('.amf-bulk-selection-count').text(count + (count > 1 ? ' familles sélectionnées' : ' famille sélectionnée'));
-        $('.amf-apply-family-bulk').prop('disabled', !count || !action);
+        $('.amf-apply-family-bulk').prop('disabled', familyBulkBusy || !count || !action);
     }
 
     $(document).on('change', '.amf-family-select-all', function () {
@@ -376,12 +380,22 @@
         refreshFamilyBulkControls();
     });
 
-    $(document).on('change', '.amf-family-checkbox, #amf-family-bulk-action', refreshFamilyBulkControls);
+    $(document).on('change', '.amf-family-checkbox', refreshFamilyBulkControls);
+    $(document).on('change', '.amf-family-bulk-action', function () {
+        if (familyBulkBusy) return;
+        $('.amf-family-bulk-action').val($(this).val());
+        refreshFamilyBulkControls();
+    });
 
     $(document).on('click', '.amf-apply-family-bulk', function () {
-        var action = $('#amf-family-bulk-action').val();
+        if (familyBulkBusy) return;
+        var action = $(this).closest('.amf-bulk-actions').find('.amf-family-bulk-action').val();
         var selected = selectedFamilyCheckboxes();
         if (action !== 'delete' || !selected.length) return;
+        if (productRunning || productRequestInFlight) {
+            window.alert('Terminez ou mettez en pause la vérification des produits avant de supprimer.');
+            return;
+        }
 
         var families = [];
         var totalFiles = 0;
@@ -408,8 +422,9 @@
         var confirmation = askFamilyDeletionConfirmation(families.length, totalFiles, risks);
         if (!confirmation) return;
 
-        var button = $(this);
-        var select = $('#amf-family-bulk-action');
+        familyBulkBusy = true;
+        var button = $('.amf-apply-family-bulk');
+        var select = $('.amf-family-bulk-action');
         var checkboxes = $('.amf-family-checkbox, .amf-family-select-all');
         var progress = $('.amf-bulk-progress');
         var scanId = parseInt($('.amf-bulk-actions').data('scan-id') || (current && current.id) || 0, 10);
@@ -420,6 +435,7 @@
         button.prop('disabled', true).text('Suppression…');
         select.prop('disabled', true);
         checkboxes.prop('disabled', true);
+        $('.amf-delete-family, .amf-delete-media, .amf-refresh-product-index').prop('disabled', true);
 
         function finishBulkDelete() {
             progress.text('Terminé : ' + success + ' famille(s) supprimée(s)' + (failures.length ? ', ' + failures.length + ' échec(s).' : '.'));
@@ -472,7 +488,7 @@
 
     function productMessage(message) { $('.amf-product-index-message').text(message || ''); }
     function productControls() {
-        $('.amf-refresh-product-index').prop('disabled', productRunning || productRequestInFlight);
+        $('.amf-refresh-product-index').prop('disabled', familyBulkBusy || productRunning || productRequestInFlight);
         $('.amf-pause-product-index').prop('hidden', !productRunning);
     }
     function productStep(restart) {
@@ -480,7 +496,7 @@
         productRequestInFlight = true;
         productControls();
         $('.amf-product-index-progress').prop('hidden', false);
-        productMessage('Vérification des images principales, galeries et variations. Aucun fichier de uploads ne sera parcouru.');
+        productMessage('Vérification des images produits en cours…');
         request('amf_product_index', { restart: restart ? '1' : '0' }, 45000)
             .done(function (response) {
                 if (!response || !response.success) {
@@ -493,7 +509,7 @@
                 var n = parseInt(productState.current || 0, 10);
                 var total = parseInt(productState.total || 0, 10);
                 $('.amf-product-index-progress progress').val(total ? Math.min(100, n * 100 / total) : 100);
-                $('.amf-product-index-progress span').text(n.toLocaleString('fr-FR') + ' / ' + total.toLocaleString('fr-FR') + ' champs vérifiés');
+                $('.amf-product-index-progress span').text(n.toLocaleString('fr-FR') + ' / ' + total.toLocaleString('fr-FR') + ' éléments vérifiés');
                 if (productState.ready) {
                     productRunning = false;
                     productMessage('Vérification terminée. Actualisation du tableau...');
@@ -519,6 +535,7 @@
             });
     }
     $(document).on('click', '.amf-refresh-product-index', function () {
+        if (familyBulkBusy || productRequestInFlight) return;
         if ($('.amf-family-checkbox:checked').length && !window.confirm('La vérification actualisera la page et annulera la sélection courante. Continuer ?')) return;
         productRunning = true; productRetry = 0;
         productStep(!productState.working);

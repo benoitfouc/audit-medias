@@ -56,6 +56,7 @@ class AMF_Admin {
 		}
 		wp_enqueue_style( 'amf-admin', AMF_PLUGIN_URL . 'assets/admin.css', array(), AMF_VERSION );
 		wp_enqueue_style( 'amf-admin-tables', AMF_PLUGIN_URL . 'assets/admin-tables.css', array( 'amf-admin' ), AMF_VERSION );
+		wp_enqueue_style( 'amf-client', AMF_PLUGIN_URL . 'assets/admin-client.css', array( 'amf-admin-tables' ), AMF_VERSION );
 		wp_enqueue_script( 'amf-admin', AMF_PLUGIN_URL . 'assets/admin.js', array( 'jquery' ), AMF_VERSION, true );
 		wp_localize_script(
 			'amf-admin',
@@ -90,44 +91,27 @@ class AMF_Admin {
 		$scan = $this->db->get_latest_scan();
 		?>
 		<div class="wrap amf-wrap">
-			<header class="amf-hero">
-				<div class="amf-hero-main">
-					<div class="amf-eyebrow"><span class="dashicons dashicons-images-alt2" aria-hidden="true"></span> BENFOU &nbsp;·&nbsp; OUTIL DE MAINTENANCE</div>
-					<h1>Audit Médias <span class="amf-version">v<?php echo esc_html( AMF_VERSION ); ?></span></h1>
-					<p>Retrouvez les images utilisées, explorez les familles de fichiers et préparez un nettoyage sans agir à l’aveugle.</p>
-				</div>
-				<div class="amf-hero-actions">
-					<a class="button" href="<?php echo esc_url( admin_url( 'tools.php?page=audit-medias&tab=dashboard' ) ); ?>"><span class="dashicons dashicons-dashboard" aria-hidden="true"></span> Vue d’ensemble</a>
-					<a class="button" href="<?php echo esc_url( admin_url( 'tools.php?page=audit-medias&tab=settings' ) ); ?>"><span class="dashicons dashicons-admin-generic" aria-hidden="true"></span> Réglages</a>
-					<a class="button" href="https://github.com/benoitfouc/audit-medias#-comment-lutiliser-" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-external" aria-hidden="true"></span> Guide</a>
-				</div>
-			</header>
-			<div class="amf-status-line" role="status">
-				<span class="amf-status-chip <?php echo $scan && 'complete' === $scan['status'] && AMF_Reference_Parser::scan_is_current( $scan ) ? 'amf-status-ready' : 'amf-status-waiting'; ?>">
-					<span class="dashicons dashicons-<?php echo $scan && 'complete' === $scan['status'] && AMF_Reference_Parser::scan_is_current( $scan ) ? 'yes-alt' : 'clock'; ?>" aria-hidden="true"></span>
-					<?php echo esc_html( ! $scan ? 'Aucun audit effectué' : ( ! AMF_Reference_Parser::scan_is_current( $scan ) ? 'Nouvel audit requis' : ( 'complete' === $scan['status'] ? 'Audit complet' : 'Audit à terminer' ) ) ); ?>
-				</span>
-				<span class="amf-status-chip <?php echo $this->actions->deletion_enabled() ? 'amf-status-danger' : 'amf-status-safe'; ?>"><span class="dashicons dashicons-shield" aria-hidden="true"></span> Suppressions <?php echo $this->actions->deletion_enabled() ? 'activées' : 'désactivées'; ?></span>
-				<span class="amf-status-note">Un scan n’entraîne jamais de suppression automatique.</span>
-			</div>
+            <header class="amf-client-header">
+                <div><h1>Audit Médias <span class="amf-version">v<?php echo esc_html(AMF_VERSION); ?></span></h1><span class="amf-byline">par Benfou</span></div>
+                <span class="amf-status-chip <?php echo $this->actions->deletion_enabled() ? 'amf-status-danger' : 'amf-status-safe'; ?>">Suppressions <?php echo $this->actions->deletion_enabled() ? 'activées' : 'désactivées'; ?></span>
+            </header>
             <?php if ( $scan && ! AMF_Reference_Parser::scan_is_current( $scan ) ) : ?>
-            <div class="notice notice-warning inline amf-parser-update"><p><strong>Nouvelle détection des arrière-plans et des URL CDN.</strong>
-            Cet audit a été réalisé avec l’ancien moteur. <a href="<?php echo esc_url( admin_url( 'tools.php?page=audit-medias&tab=dashboard' ) ); ?>">Recommencez l’analyse complète depuis le tableau de bord</a>.
-            Les filtres sans référence et les suppressions sont suspendus jusqu’à la fin de ce nouvel audit. Le bouton Actualiser les images produits ne suffit pas.</p></div>
+            <div class="notice notice-warning inline amf-parser-update"><p><strong>Un nouvel audit est nécessaire.</strong> <a href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=dashboard')); ?>">Relancer l’analyse</a> pour réactiver les filtres d’absence et les suppressions.</p></div>
             <?php endif; ?>
 			<nav class="nav-tab-wrapper">
 				<?php
 				$tabs = array(
-					'dashboard' => array( 'Tableau de bord', 'dashboard' ),
-					'media'     => array( 'Médiathèque', 'format-gallery' ),
-					'files'     => array( 'Fichiers physiques', 'portfolio' ),
+					'dashboard' => array( 'Vue d’ensemble', 'dashboard' ),
+					'files'     => array( 'Médias', 'format-gallery' ),
 					'woo'       => array( 'WooCommerce', 'cart' ),
 					'errors'    => array( 'Alertes', 'warning' ),
 					'settings'  => array( 'Réglages', 'admin-generic' ),
 				);
+				if ( ! $this->product_usage->available() ) { unset( $tabs['woo'] ); }
+				$active_tab = 'media' === $tab ? 'files' : $tab;
 				foreach ( $tabs as $key => $item ) {
 					$url = admin_url( 'tools.php?page=audit-medias&tab=' . $key );
-					echo '<a class="nav-tab ' . ( $tab === $key ? 'nav-tab-active' : '' ) . '" href="' . esc_url( $url ) . '"' . ( $tab === $key ? ' aria-current="page"' : '' ) . '><span class="dashicons dashicons-' . esc_attr( $item[1] ) . '" aria-hidden="true"></span> ' . esc_html( $item[0] ) . '</a>';
+					echo '<a class="nav-tab ' . ( $active_tab === $key ? 'nav-tab-active' : '' ) . '" href="' . esc_url( $url ) . '"' . ( $active_tab === $key ? ' aria-current="page"' : '' ) . '><span class="dashicons dashicons-' . esc_attr( $item[1] ) . '" aria-hidden="true"></span> ' . esc_html( $item[0] ) . '</a>';
 				}
 				?>
 			</nav>
@@ -309,106 +293,55 @@ class AMF_Admin {
 		check_ajax_referer( 'amf_scan_nonce', 'nonce' );
 	}
 
-	private function render_dashboard( $scan ) {
-		$scan_id = $scan ? (int) $scan['id'] : 0;
-		$stats = $scan_id ? $this->dashboard_stats( $scan_id ) : array();
-		?>
-		<section class="amf-scan-panel">
-			<div class="amf-panel-heading"><div><h2>Analyse des médias</h2><p>Le traitement est effectué par lots pour respecter les ressources de l’hébergement.</p></div><span class="amf-scan-live" id="amf-scan-state" aria-live="polite"><?php echo esc_html( $scan ? ( 'complete' === $scan['status'] ? 'Terminée' : 'À reprendre' ) : 'Non démarrée' ); ?></span></div>
-			<div id="amf-progress" class="amf-progress" data-scan-id="<?php echo esc_attr( $scan_id ); ?>">
-				<div class="amf-progress-head">
-					<strong id="amf-phase-label"><?php echo esc_html( $scan ? AMF_Utils::status_label( $scan['phase'] ) : 'Aucune analyse' ); ?></strong>
-					<span id="amf-progress-numbers"></span>
-				</div>
-				<div class="amf-progress-track" id="amf-progress-track" role="progressbar" aria-label="Progression du lot" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="amf-progress-bar" class="amf-progress-bar"></div></div>
-				<p id="amf-progress-message" class="description"><?php echo $scan ? esc_html( $scan['message'] ) : 'L’analyse fonctionne par petits lots et peut être reprise après fermeture de cette page.'; ?></p>
-				<p id="amf-live-performance" class="description amf-live-performance"></p>
-			</div>
-			<p class="amf-actions">
-				<button type="button" class="button button-primary" id="amf-start-scan"><?php echo $scan ? 'Recommencer l’analyse' : 'Lancer l’analyse'; ?></button>
-				<?php if ( $scan && 'complete' !== $scan['status'] ) : ?>
-					<button type="button" class="button" id="amf-resume-scan">Reprendre</button>
-					<button type="button" class="button" id="amf-pause-scan" disabled>Pause</button>
-				<?php endif; ?>
-			</p>
-			<p class="description">Vous pouvez fermer l’onglet à tout moment. La progression est enregistrée en base et le bouton <strong>Reprendre</strong> continuera au dernier lot validé.</p>
-		</section>
+    private function render_dashboard( $scan ) {
+        $scan_id = $scan ? (int) $scan['id'] : 0;
+        $ready = $scan && $this->usage_results_ready($scan);
+        ?>
+        <section class="amf-scan-panel">
+            <div class="amf-panel-heading"><h2>Analyse du site</h2><span id="amf-scan-state" class="amf-scan-live" aria-live="polite"><?php echo $ready ? 'Terminée' : ($scan ? 'À reprendre' : 'Non démarrée'); ?></span></div>
+            <div id="amf-progress" class="amf-progress" data-scan-id="<?php echo esc_attr($scan_id); ?>">
+                <div class="amf-progress-head"><strong id="amf-phase-label"><?php echo $ready ? 'Analyse terminée' : 'Analyse des médias'; ?></strong><span id="amf-progress-numbers"></span></div>
+                <div id="amf-progress-track" class="amf-progress-track" role="progressbar" aria-label="Progression de l’étape" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="amf-progress-bar" class="amf-progress-bar"></div></div>
+                <p id="amf-progress-message" class="description"><?php echo $ready ? 'Consultez les médias et leurs utilisations.' : 'L’analyse ne supprime aucun fichier. Gardez cet onglet ouvert pour la faire avancer.'; ?></p>
+            </div>
+            <div class="amf-actions">
+                <?php if ($ready) : ?><a class="button button-primary" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=files')); ?>">Parcourir les médias</a><?php endif; ?>
+                <button type="button" class="button <?php echo $ready ? '' : 'button-primary'; ?>" id="amf-start-scan"><?php echo $scan ? 'Relancer l’analyse' : 'Lancer l’analyse'; ?></button>
+                <?php if ($scan && 'complete' !== $scan['status']) : ?><button type="button" class="button" id="amf-resume-scan">Reprendre</button><button type="button" class="button" id="amf-pause-scan" disabled>Pause</button><?php endif; ?>
+            </div>
+            <?php if (!$ready) : ?><p class="description">La progression est conservée si vous fermez la page.</p><?php endif; ?>
+        </section>
+        <?php
+        if ($scan_id) {
+            $stats = $this->dashboard_stats($scan_id);
+            echo '<div class="amf-cards amf-client-cards">';
+            $this->stat_card('Médias WordPress',number_format_i18n($stats['media']));
+            $this->stat_card('Fichiers analysés',$this->files_results_ready($scan) ? number_format_i18n($stats['physical_files']) : 'En attente');
+            $this->stat_card('Sans référence détectée',$ready ? $stats['no_usage'] : 'En attente');
+            echo '</div>';
+            if ($ready) {
+                echo '<p class="amf-safety-note">Vérifiez les utilisations et sauvegardez le site avant toute suppression.</p>';
+                echo '<p><a href="'.esc_url(admin_url('tools.php?page=audit-medias&tab=errors')).'">Consulter les alertes de l’audit</a></p>';
+            }
+        }
+    }
 
-		<section class="amf-workflow" aria-label="Les trois étapes de l’audit">
-			<div class="amf-workflow-step"><span class="amf-workflow-number">1</span><div><strong>Analyser</strong><span>Lancez un audit complet, puis attendez la fin des vérifications.</span></div></div>
-			<div class="amf-workflow-step"><span class="amf-workflow-number">2</span><div><strong>Vérifier les références</strong><span>Consultez les <a href="<?php echo esc_url( admin_url( 'tools.php?page=audit-medias&tab=files' ) ); ?>">familles de fichiers</a> et leurs utilisations.</span></div></div>
-			<div class="amf-workflow-step"><span class="amf-workflow-number">3</span><div><strong>Décider prudemment</strong><span>Contrôlez les cas ambigus et sauvegardez avant toute suppression.</span></div></div>
-		</section>
-        <p class="description amf-dashboard-settings-link">La cadence du scan peut être ajustée dans l’onglet <a href="<?php echo esc_url( admin_url( 'tools.php?page=audit-medias&tab=settings' ) ); ?>"><strong>Réglages</strong></a>, y compris pendant une analyse.</p>
-
-		<?php if ( $scan_id ) : ?>
-			<?php
-			$usage_ready = $this->usage_results_ready( $scan );
-			$files_ready = $this->files_results_ready( $scan );
-			$woo_ready   = $this->woo_results_ready( $scan );
-			?>
-
-            <?php if ('complete' === $scan['status'] && AMF_Reference_Parser::scan_is_current($scan)) : ?>
-                <?php $this->product_index_panel($scan); ?>
-                <section class="amf-priority-box">
-                    <h2>Par où commencer ?</h2>
-                    <p class="description">Commencez par les images absentes des fiches produits, puis vérifiez les autres emplacements. Aucun filtre n'autorise une suppression automatique.</p>
-                    <div class="amf-priority-cards">
-                        <?php if($this->product_usage->available()) : ?>
-                        <a class="amf-priority-card" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=files&wc_usage=absent')); ?>"><strong><?php echo esc_html($stats['wc_absent']); ?></strong><span>Absentes des images produits</span></a>
-                        <a class="amf-priority-card" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=files&wc_usage=absent&other_usage=none')); ?>"><strong><?php echo esc_html($stats['no_usage']); ?></strong><span>Sans référence détectée (fichiers URL compris)</span></a>
-                        <?php else : ?>
-                        <a class="amf-priority-card" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=media&state=no_usage')); ?>"><strong><?php echo esc_html($stats['no_usage']); ?></strong><span>Sans référence détectée dans l'audit</span></a>
-                        <?php endif; ?>
-                        <a class="amf-priority-card" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=woo&severity=critical')); ?>"><strong><?php echo esc_html($stats['critical']); ?></strong><span>Problèmes physiques WooCommerce critiques</span></a>
-                    </div>
-                </section>
-            <?php endif; ?>
-
-			<div class="amf-cards">
-				<?php $this->stat_card( 'Médias WordPress', $stats['media'] ); ?>
-				<?php $this->stat_card( 'Fichiers physiques', $files_ready ? $stats['physical_files'] : 'En attente' ); ?>
-				<?php $this->stat_card( 'Fichiers / média', $files_ready ? number_format_i18n( $stats['avg_files'], 1 ) : 'En attente' ); ?>
-				<?php $this->stat_card( 'Fichiers non associés', $files_ready ? $stats['unassociated'] : 'En attente' ); ?>
-				<?php $this->stat_card( 'Non associés mais référencés', $files_ready ? $stats['unassociated_used'] : 'En attente' ); ?>
-				<?php $this->stat_card( 'Médias avec reference', $usage_ready ? $stats['used'] : 'En attente' ); ?>
-				<?php $this->stat_card( 'Sans référence détectée', $usage_ready ? $stats['no_usage'] : 'En attente' ); ?>
-				<?php $this->stat_card( 'Woo critiques', $woo_ready ? $stats['critical'] : 'En attente' ); ?>
-				<?php $this->stat_card( 'Woo régénérables', $woo_ready ? $stats['regenerable'] : 'En attente' ); ?>
-				<?php $this->stat_card( 'Sources trop petites', $woo_ready ? $stats['manual'] : 'En attente' ); ?>
-			</div>
-		<?php endif; ?>
-
-		<section class="amf-info-box">
-			<h2>Périmètre de fiabilité</h2>
-			<p>Le moteur est volontairement <strong>généraliste</strong> : il analyse les contenus et types de contenus WordPress, Gutenberg, shortcodes WPBakery/Salient (arrière-plans, images, galeries), images mises en avant, métadonnées, données sérialisées/JSON, taxonomies, catégories, marques, options, CSS enregistré dans ces contenus/métadonnées et URL vers <code>uploads</code> (CDN compris lorsque le chemin source est identifiable). Les clés ressemblant à des IDs d’image sont détectées par heuristique, sans dépendre d’un plugin de marque précis.</p>
-			<p>WooCommerce est audité lorsqu’il est actif. Les constructeurs de pages et extensions stockant leurs données dans <code>post_meta</code>, <code>term_meta</code> ou les options sont également inspectés de manière générique.</p>
-			<p><strong>Important :</strong> « Aucune utilisation détectée » ne signifie jamais « peut être supprimé ». Un plugin tiers peut utiliser sa propre table ou construire une URL dynamiquement.</p>
-		</section>
-		<?php
-	}
-
-	private function render_settings_tab() {
-		$performance = $this->scanner->get_performance_settings();
-		$deletion_enabled = $this->actions->deletion_enabled();
-		?>
-		<section class="amf-settings-page">
-			<h2>Réglages</h2>
-
-			<div class="amf-info-box amf-settings-explanation">
-				<h3>Performance du scan</h3>
-				<p>Chaque phase est traitée par petits lots afin d’éviter les timeouts sur les sites volumineux. Une valeur plus élevée accélère généralement l’analyse, mais sollicite davantage PHP, MySQL et l’hébergement.</p>
-				<p><strong>Temps maximal par lot :</strong> durée maximale pendant laquelle une requête travaille avant de rendre la main proprement et de poursuivre avec le lot suivant.</p>
-			</div>
-
-			<div class="amf-settings-panel amf-settings-panel-static">
-				<div class="amf-settings-body">
-					<h3>Cadence</h3>
-					<div class="amf-presets">
-						<button type="button" class="button amf-preset" data-preset="prudent">Prudent</button>
-						<button type="button" class="button amf-preset" data-preset="balanced">Équilibré</button>
-						<button type="button" class="button amf-preset" data-preset="fast">Rapide</button>
-					</div>
+    private function render_settings_tab() {
+        $performance = $this->scanner->get_performance_settings();
+        $deletion_enabled = $this->actions->deletion_enabled();
+        ?>
+        <h2>Réglages</h2>
+        <section class="amf-info-box amf-danger-settings">
+            <h3>Suppression manuelle</h3>
+            <p>Les suppressions sont définitives. Conservez une sauvegarde et vérifiez les utilisations avant de confirmer.</p>
+            <label class="amf-toggle-line"><input type="checkbox" id="amf-deletion-enabled" <?php checked($deletion_enabled); ?>> Autoriser les boutons de suppression</label>
+            <p><button type="button" class="button" id="amf-save-deletion">Enregistrer</button> <span id="amf-deletion-message" role="status"></span></p>
+        </section>
+        <section class="amf-info-box">
+            <h3>Vitesse de l’analyse</h3>
+            <p>Gardez les réglages actuels si l’analyse fonctionne correctement.</p>
+            <div class="amf-presets"><button type="button" class="button amf-preset" data-preset="prudent">Prudent</button><button type="button" class="button amf-preset" data-preset="balanced">Équilibré</button><button type="button" class="button amf-preset" data-preset="fast">Rapide</button></div>
+            <details class="amf-disclosure"><summary>Réglages avancés des lots</summary><p>Des lots plus grands sollicitent davantage l’hébergement. Le temps maximal limite chaque requête, pas la durée totale de l’audit.</p>
 					<div class="amf-settings-grid">
 						<?php $this->performance_field( 'media_batch', 'Médias WordPress / lot', $performance['media_batch'], '1–100.' ); ?>
 						<?php $this->performance_field( 'posts_batch', 'Contenus / Gutenberg / lot', $performance['posts_batch'], '1–250.' ); ?>
@@ -420,26 +353,53 @@ class AMF_Admin {
 						<?php $this->performance_field( 'request_delay_ms', 'Délai entre deux requêtes (ms)', $performance['request_delay_ms'], '0–3000 ms.' ); ?>
 						<?php $this->performance_field( 'time_budget_seconds', 'Temps maximal par lot (s)', $performance['time_budget_seconds'], '3–18 s.' ); ?>
 					</div>
-					<p><button type="button" class="button button-primary" id="amf-save-performance">Enregistrer les réglages</button> <span id="amf-settings-message" class="description"></span></p>
-				</div>
-			</div>
+            </details>
+            <p><button type="button" class="button button-primary" id="amf-save-performance">Enregistrer la cadence</button> <span id="amf-settings-message" role="status"></span></p>
+        </section>
+        <section class="amf-info-box">
+            <h3>Mises à jour</h3>
+            <p>Version installée : <strong><?php echo esc_html(AMF_VERSION); ?></strong>. Les nouvelles versions sont proposées dans WordPress.</p>
+            <?php if (current_user_can('update_plugins')) : ?>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"><input type="hidden" name="action" value="amf_check_updates"><?php wp_nonce_field('amf_check_updates'); ?><button type="submit" class="button">Rechercher une mise à jour</button></form>
+            <?php endif; ?>
+        </section>
+        <?php $this->render_technical_settings(); ?>
+        <p class="description">Développé par <a href="https://www.benfou.fr/" target="_blank" rel="noopener noreferrer">Benfou</a> · <a href="https://github.com/benoitfouc/audit-medias" target="_blank" rel="noopener noreferrer">Documentation</a></p>
+        <?php
+    }
 
-			<div class="amf-info-box amf-danger-settings">
-				<h3>Suppression contrôlée</h3>
-				<p>Les suppressions sont <strong>désactivées par défaut</strong>. Les familles non rattachées peuvent être supprimées après confirmation. Les familles liées à WordPress, utilisées ou ambiguës sont également sélectionnables, mais exigent une confirmation renforcée.</p>
-				<p><strong>Attention :</strong> les suppressions proposées par cette version sont définitives. Elles nécessitent toujours une confirmation manuelle et ne sont jamais déclenchées pendant un scan.</p>
-				<label class="amf-toggle-line"><input type="checkbox" id="amf-deletion-enabled" <?php checked( $deletion_enabled ); ?>> Activer les boutons de suppression manuelle</label>
-				<p><button type="button" class="button" id="amf-save-deletion">Enregistrer</button> <span id="amf-deletion-message" class="description"></span></p>
-			</div>
-
-			<div class="amf-info-box amf-about-box">
-				<h3>À propos</h3>
-				<p><strong>Audit Médias</strong> — version <?php echo esc_html( AMF_VERSION ); ?><br>Développé par <a href="https://www.benfou.fr/" target="_blank" rel="noopener noreferrer"><strong>Benfou</strong></a>.</p>
-				<p class="description">Slug du plugin : <code>audit-medias</code>.</p>
-			</div>
-		</section>
-		<?php
-	}
+    private function render_technical_settings() {
+        $scan = $this->db->get_latest_scan();
+        $product = $this->product_usage->status();
+        $diagnostic = array('Extension' => AMF_VERSION, 'WordPress' => get_bloginfo('version'), 'PHP' => PHP_VERSION);
+        if ($scan) {
+            foreach (array('id','status','phase','started_at','finished_at') as $key) {
+                $diagnostic['Audit / '.$key] = isset($scan[$key]) ? (string)$scan[$key] : '';
+            }
+            $diagnostic['Moteur de références'] = AMF_Reference_Parser::scan_is_current($scan) ? 'À jour' : 'Nouvel audit requis';
+        }
+        $diagnostic['Images produits / état'] = isset($product['status']) ? $product['status'] : '';
+        $diagnostic['Images produits / vérification'] = isset($product['checked_at']) ? $product['checked_at'] : '';
+        ?>
+        <details id="amf-technical" class="amf-disclosure amf-technical">
+            <summary>Technique / diagnostic</summary>
+            <p>Informations de maintenance. Aucun journal supplémentaire ni collecte de données n’est activé.</p>
+            <dl class="amf-diagnostic-list"><?php foreach ($diagnostic as $label => $value) : ?><dt><?php echo esc_html($label); ?></dt><dd><?php echo esc_html($value ?: '—'); ?></dd><?php endforeach; ?></dl>
+            <?php if ($scan && !empty($scan['message'])) : ?><p><strong>Dernier message de l’audit :</strong> <?php echo esc_html($scan['message']); ?></p><?php endif; ?>
+            <p><a class="button" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=media')); ?>">Ouvrir l’inventaire WordPress avancé</a></p>
+            <p>Cette vue conserve les médias enregistrés en base, y compris ceux dont tous les fichiers ont disparu. L’onglet Médias regroupe les familles de fichiers physiques.</p>
+            <?php if ($scan) : $stats = $this->dashboard_stats((int)$scan['id']); ?>
+            <details class="amf-disclosure"><summary>Statistiques détaillées</summary><dl class="amf-diagnostic-list"><?php foreach ($stats as $label => $value) : ?><dt><?php echo esc_html($label); ?></dt><dd><?php echo esc_html(is_scalar($value) ? (string)$value : ''); ?></dd><?php endforeach; ?></dl></details>
+            <?php endif; ?>
+            <details class="amf-disclosure"><summary>Périmètre de détection et limites</summary>
+                <p>Contenus WordPress, Gutenberg, shortcodes, métadonnées, Elementor, WPBakery, taxonomies, options et URL identifiables. Une référence sur un dérivé protège la famille entière.</p>
+                <p>Les tailles déclarées dans les métadonnées et les anciens rattachements ne prouvent pas une utilisation actuelle. Les fichiers externes, tables propriétaires, contenus dynamiques et certains CDN peuvent échapper à l’analyse.</p>
+                <p>L’actualisation des images produits relit les images principales, galeries et variations, mais ne remplace pas l’audit complet. Les produits en corbeille sont exclus ; les brouillons restent identifiés.</p>
+                <p>Les mises à jour interrogent les releases publiques GitHub, sans jeton. Le cache est conservé jusqu’à 6 heures (30 minutes après une erreur). Le bouton de recherche ci-dessus le renouvelle, sans installer de version.</p>
+            </details>
+        </details>
+        <?php
+    }
 
     private function render_media_tab( $scan ) {
         $id = isset($_GET['media_id']) ? absint($_GET['media_id']) : 0;
@@ -463,16 +423,27 @@ class AMF_Admin {
     }
 
     private function product_index_panel( $scan ) {
-        $s=$this->product_usage->status();
+        $s = $this->product_usage->status();
         if (!$s['available']) { return; }
         ?>
-        <div class="amf-product-index" data-auto="<?php echo esc_attr( in_array($s['status'],array('idle','stale','running'),true) ? '1' : '0' ); ?>">
-            <div><strong>Images produits</strong> <span class="amf-product-index-status"><?php
-                echo esc_html( $s['ready'] ? 'Vérifiées le ' . $s['checked_at'] : ($s['checked_at'] ? 'À actualiser - dernière vérification : ' . $s['checked_at'] : 'Première vérification à effectuer') );
-            ?></span><small class="amf-cell-note">Images principales, galeries WooCommerce standard et images propres aux variations. Les brouillons restent identifiés ; les produits en corbeille sont exclus.</small></div>
-            <div class="amf-product-index-controls"><button type="button" class="button amf-refresh-product-index">Actualiser les images produits</button><button type="button" class="button amf-pause-product-index" hidden>Pause</button></div>
+        <div class="amf-product-index amf-product-index-compact" data-auto="<?php echo esc_attr(in_array($s['status'],array('idle','stale','running'),true) ? '1' : '0'); ?>">
+            <span class="amf-product-index-status"><?php echo $s['ready'] ? 'Images produits à jour' : 'Images produits à vérifier'; ?></span>
+            <div class="amf-product-index-controls"><button type="button" class="button-link amf-refresh-product-index">Actualiser</button><button type="button" class="button amf-pause-product-index" hidden>Pause</button></div>
             <div class="amf-product-index-progress" hidden><progress max="100" value="0"></progress><span aria-live="polite"></span></div>
-            <p class="amf-product-index-message" role="status"><?php echo esc_html($s['ready'] ? '' : $s['message']); ?></p>
+            <p class="amf-product-index-message" role="status"><?php echo esc_html(!$s['ready'] && 'error' === $s['status'] ? $s['message'] : ''); ?></p>
+        </div>
+        <?php
+    }
+
+    private function render_bulk_actions( $scan_id, $position ) {
+        $id = 'amf-family-bulk-action-' . $position;
+        ?>
+        <div class="amf-bulk-actions" data-scan-id="<?php echo esc_attr($scan_id); ?>">
+            <label for="<?php echo esc_attr($id); ?>" class="screen-reader-text">Action sur les familles sélectionnées</label>
+            <select id="<?php echo esc_attr($id); ?>" class="amf-family-bulk-action" <?php disabled(!$this->actions->deletion_enabled()); ?>><option value="">Actions groupées</option><option value="delete">Supprimer la sélection</option></select>
+            <button type="button" class="button amf-apply-family-bulk" disabled>Appliquer</button>
+            <span class="amf-bulk-selection-count">0 famille sélectionnée</span><span class="amf-bulk-progress" role="status"></span>
+            <?php if (!$this->actions->deletion_enabled() && 'top' === $position) : ?><a class="amf-text-muted" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=settings')); ?>">Activer la suppression dans les réglages</a><?php endif; ?>
         </div>
         <?php
     }
@@ -482,17 +453,18 @@ class AMF_Admin {
         $usage_ready=$this->usage_results_ready($scan); $files_ready=$this->files_results_ready($scan);
         $filters=$this->usage_filters();
         $result=$this->usage_view->list_data($scan,$mode,$filters,$usage_ready);
-        echo '<div class="amf-section-head"><div><h2>' . ($is_files ? 'Fichiers physiques, regroupés par média' : 'Médias WordPress') . '</h2>';
-        echo '<p class="description">Repérez les images absentes des fiches produits, puis contrôlez leurs autres références avant de supprimer.</p></div></div>';
+        $has_woo = $this->product_usage->available();
+        echo '<div class="amf-section-head amf-list-heading"><div><h2>' . ($is_files ? 'Médias' : 'Inventaire WordPress avancé') . '</h2><p class="description">' . ($is_files ? 'Une ligne par image, avec ses variantes.' : 'Médias enregistrés dans WordPress, même sans fichier physique.') . '</p></div>';
         $this->product_index_panel($scan);
-        echo '<p class="amf-audit-date">Références et fichiers : audit du <strong>' . esc_html($scan['finished_at'] ?: $scan['started_at']) . '</strong>. Le filtre « Sans autre référence » vérifie toute la famille, y compris les URLs de ses miniatures et conversions. Une déclaration dans les métadonnées WordPress n’est pas une preuve d’utilisation. Vérifiez manuellement avant toute suppression.</p>';
+        echo '</div>';
+        if (!$is_files) { echo '<p><a href="'.esc_url(admin_url('tools.php?page=audit-medias&tab=files')).'">← Retour aux médias</a></p>'; }
         if (is_wp_error($result)) { echo '<div class="notice notice-error inline"><p>' . esc_html($result->get_error_message()) . '</p></div>'; return; }
         if (AMF_Reference_Parser::scan_is_current($scan) && (!$usage_ready || !$files_ready)) { echo '<div class="notice notice-info inline"><p>Audit principal en cours : les références et fichiers restent provisoires.</p></div>'; }
         $wc=$this->product_usage->status();
         if ((!$wc['ready'] && $filters['wc_usage']) || (!$usage_ready && $filters['other_usage'])) {
             echo '<div class="notice notice-warning inline"><p>Ce filtre attend une vérification terminée. Aucun résultat négatif n\'est affiché entre-temps.</p></div>';
         }
-        $rows=$result['rows']; $cols=$is_files ? 8 : 6;
+        $rows=$result['rows']; $cols=($is_files ? 8 : 6) - ($has_woo ? 0 : 1);
         $ids=array_column($rows,'attachment_id'); $keys=array_column($rows,'group_key');
         $product_refs=$this->product_usage->references($ids);
         $other_refs=$this->usage_view->other_references($sid,$ids,$keys);
@@ -500,23 +472,18 @@ class AMF_Admin {
         if ($wc['available']) {
             $selects['wc_usage']=array(''=>'Toutes les images produits','absent'=>'Absentes des images produits','used'=>'Affectées à un produit','main'=>'Images principales','gallery'=>'Galeries','variation'=>'Images des variations');
         }
-        $selects['other_usage']=array(''=>'Toutes les autres références','none'=>'Sans autre référence (URLs incluses)','found'=>'Au moins une autre référence (URL incluse)');
-        if ($is_files) { $selects['assoc']=array(''=>'Tous les médias / familles','unassociated'=>'Sans média WordPress identifié','probable'=>'Association physique à confirmer','review'=>'Sans référence détectée (URLs incluses)','confirmed'=>'Média WordPress identifié','direct_used'=>'Sans média, avec référence par URL'); }
-        else { $selects['state']=array(''=>'Tous les fichiers','missing'=>'Fichier principal absent','no_usage'=>'Sans référence détectée (URLs incluses)','used'=>'Avec une référence confirmée','probable'=>'Références à confirmer'); }
+        $selects['other_usage']=array(''=>($has_woo ? 'Références hors images produits' : 'Toutes les références'),'none'=>'Sans autre référence','found'=>'Autres références détectées');
+        if ($is_files) { $selects['assoc']=array(''=>'Tous les médias / familles','unassociated'=>'Sans média WordPress identifié','probable'=>'Association physique à confirmer','review'=>'Sans référence détectée','confirmed'=>'Média WordPress identifié','direct_used'=>'Sans média, avec référence par URL'); }
+        else { $selects['state']=array(''=>'Tous les fichiers','missing'=>'Fichier principal absent','no_usage'=>'Sans référence détectée','used'=>'Avec une référence confirmée','probable'=>'Références à confirmer'); }
         $this->render_filter_form($mode,$selects,$filters['s'],$result['total'],$filters['per_page']);
-        if ($is_files) : ?>
-        <div class="amf-bulk-actions" data-scan-id="<?php echo esc_attr($sid); ?>">
-            <label for="amf-family-bulk-action" class="screen-reader-text">Action groupée</label>
-            <select id="amf-family-bulk-action" <?php disabled(!$this->actions->deletion_enabled()); ?>><option value="">Actions groupées</option><option value="delete">Supprimer les familles sélectionnées</option></select>
-            <button type="button" class="button amf-apply-family-bulk" disabled>Appliquer</button><span class="amf-bulk-selection-count">0 famille sélectionnée</span><span class="amf-bulk-progress" aria-live="polite"></span>
-            <?php if (!$this->actions->deletion_enabled()) : ?><span class="description">Suppression désactivée dans les réglages.</span><?php endif; ?>
-        </div>
-        <?php endif; ?>
-        <p class="amf-table-tip"><span class="dashicons dashicons-info-outline" aria-hidden="true"></span> Dépliez une famille pour voir ses fichiers et références. Sur petit écran, le tableau défile horizontalement. <strong>Sans référence détectée ≠ suppression sans risque.</strong></p><div class="amf-table-wrap" tabindex="0" role="region" aria-label="Tableau des médias avec défilement horizontal"><table class="widefat striped amf-table amf-usage-table <?php echo $is_files?'amf-family-table':''; ?>"><thead><tr>
+        if ($is_files) { $this->render_bulk_actions($sid,'top'); }
+        ?>
+        <p class="amf-safety-note">Sans référence détectée ne signifie pas inutilisé. Vérifiez avant de supprimer.</p>
+        <div class="amf-table-wrap" tabindex="0" role="region" aria-label="Tableau des médias avec défilement horizontal"><table class="widefat striped amf-table amf-usage-table <?php echo $is_files?'amf-family-table':''; ?>"><thead><tr>
             <?php if ($is_files) : ?><th class="check-column amf-col-checkbox"><input type="checkbox" class="amf-family-select-all" aria-label="Sélectionner les familles de cette page" <?php disabled(!$this->actions->deletion_enabled()); ?>></th><th class="amf-col-toggle"><span class="screen-reader-text">Détails</span></th><?php endif; ?>
             <?php echo $this->files_sort_header('Média','media',$filters['orderby'],$filters['order'],'asc','amf-col-media'); ?>
-            <?php echo $this->files_sort_header('Images produits','wc',$filters['orderby'],$filters['order'],'desc','amf-col-usage'); ?>
-            <?php echo $this->files_sort_header('Autres références','references',$filters['orderby'],$filters['order'],'desc','amf-col-usage'); ?>
+            <?php if ($has_woo) { echo $this->files_sort_header('Images produits','wc',$filters['orderby'],$filters['order'],'desc','amf-col-usage'); } ?>
+            <?php echo $this->files_sort_header($has_woo ? 'Autres utilisations' : 'Utilisations','references',$filters['orderby'],$filters['order'],'desc','amf-col-usage'); ?>
             <?php echo $this->files_sort_header('Fichiers','files',$filters['orderby'],$filters['order'],'desc','amf-col-count'); ?>
             <?php echo $this->files_sort_header('Taille','size',$filters['orderby'],$filters['order'],'desc','amf-col-size'); ?>
             <th class="amf-col-actions">Actions</th>
@@ -537,23 +504,24 @@ class AMF_Admin {
                 <td class="check-column amf-col-checkbox"><input type="checkbox" class="amf-family-checkbox" value="<?php echo esc_attr($row['family_key']); ?>" <?php echo $data; ?> data-total-bytes="<?php echo esc_attr($row['total_bytes']); ?>" aria-label="Sélectionner <?php echo esc_attr($label); ?>" <?php disabled(!$can_delete); ?> title="<?php echo esc_attr($can_delete?'':$this->family_delete_block_reason($scan,$row)); ?>"></td>
                 <td><button type="button" class="button-link amf-family-toggle" aria-expanded="false" title="Voir les utilisations et les détails">&#9654;</button></td>
                 <?php endif; ?>
-                <td><?php echo $this->media_cell_html($id,$row['rel_path'],$label,($id?'#'.$id.' - ':'').dirname($row['rel_path'])); ?>
+                <td><?php echo $this->media_cell_html($id,$row['rel_path'],$label,''); ?>
                     <?php if ($id && !$row['file_exists']) : ?><span class="amf-badge amf-critical">Fichier principal absent au dernier audit</span><?php endif; ?>
                 </td>
-                <td><?php echo $this->usage_view->product_html(is_wp_error($product_refs)?$product_refs:(isset($product_refs[$id])?$product_refs[$id]:array()),$id,true,$uncertain); ?></td>
+                <?php if ($has_woo) : ?><td><?php echo $this->usage_view->product_html(is_wp_error($product_refs)?$product_refs:(isset($product_refs[$id])?$product_refs[$id]:array()),$id,true,$uncertain); ?></td><?php endif; ?>
                 <td><?php echo $this->usage_view->other_html(is_wp_error($other_refs)?$other_refs:(isset($other_refs[$key])?$other_refs[$key]:array()),$usage_ready,(int)$row['other_count'],true,(int)$row['direct_usage_count']); ?></td>
-                <td><?php if ($files_ready) : ?><strong><?php echo esc_html(number_format_i18n($row['file_count'])); ?></strong><?php if ($is_files) : ?><br><button type="button" class="button-link amf-family-open">Détails</button><?php endif; ?><?php else : ?>En attente<?php endif; ?></td>
+                <td><?php if ($files_ready) : ?><strong><?php echo esc_html(number_format_i18n($row['file_count'])); ?></strong><?php else : ?>En attente<?php endif; ?></td>
                 <td class="amf-no-wrap"><?php echo $files_ready?esc_html(AMF_Utils::human_bytes($row['total_bytes'])):'En attente'; ?></td>
                 <td class="amf-actions-cell">
                     <?php if ($file_url) : ?><a href="<?php echo esc_url($file_url); ?>" target="_blank" rel="noopener noreferrer">Voir le fichier &#8599;</a><?php endif; ?>
-                    <?php if ($is_files) : ?><button type="button" class="button-link amf-family-open">Détails / utilisations</button><?php else : ?><a href="<?php echo esc_url($detail_url); ?>">Détails / utilisations</a><a href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=files&s='.$id)); ?>">Gérer la famille</a><?php endif; ?>
+                    <?php if ($is_files) : ?><button type="button" class="button-link amf-family-open">Utilisations</button><?php else : ?><a href="<?php echo esc_url($detail_url); ?>">Détails / utilisations</a><a href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=files&s='.$id)); ?>">Gérer la famille</a><?php endif; ?>
                     <?php if ($can_delete) : ?><button type="button" class="button-link-delete amf-delete-family" <?php echo $data; ?>>Supprimer la famille</button><?php endif; ?>
                 </td>
             </tr>
-            <?php if ($is_files) : ?><tr class="amf-family-details-row" data-family-details="<?php echo esc_attr($key); ?>" hidden><td colspan="8"><div class="amf-family-details" data-loaded="0" data-scan-id="<?php echo esc_attr($sid); ?>" data-family-key="<?php echo esc_attr($row['family_key']); ?>" data-attachment-id="<?php echo esc_attr($id); ?>" data-file-id="<?php echo esc_attr($row['sample_file_id']); ?>">Chargement des utilisations...</div></td></tr><?php endif; ?>
+            <?php if ($is_files) : ?><tr class="amf-family-details-row" data-family-details="<?php echo esc_attr($key); ?>" hidden><td colspan="<?php echo esc_attr($cols); ?>"><div class="amf-family-details" data-loaded="0" data-scan-id="<?php echo esc_attr($sid); ?>" data-family-key="<?php echo esc_attr($row['family_key']); ?>" data-attachment-id="<?php echo esc_attr($id); ?>" data-file-id="<?php echo esc_attr($row['sample_file_id']); ?>">Chargement des utilisations...</div></td></tr><?php endif; ?>
         <?php endforeach; ?>
         </tbody></table></div>
-        <?php $this->pagination($result['total'],$filters['per_page'],$result['paged']);
+        <?php if ($is_files) { $this->render_bulk_actions($sid,'bottom'); }
+        $this->pagination($result['total'],$filters['per_page'],$result['paged']);
     }
 
     private function render_media_detail( $scan, $attachment_id ) {
@@ -578,7 +546,7 @@ class AMF_Admin {
         echo '<section><h3>Autres références sur le site</h3><p class="description">Dernier audit : '.esc_html($scan['finished_at'] ?: $scan['started_at']).'</p>'.$this->usage_view->other_html(is_wp_error($other)?$other:(isset($other[$family_key])?$other[$family_key]:array()),$this->usage_results_ready($scan),0,false,$direct_refs).'</section></div>';
         echo $this->usage_view->history_html($id);
         $n=(int)$this->wpdb->get_var('SELECT COUNT(*) FROM '.$this->db->table('files').' WHERE '.$where);
-        echo '<details class="amf-file-accordion"><summary>Voir les '.esc_html(number_format_i18n($n)).' fichiers de cette famille</summary><p class="description">Originaux, miniatures, conversions et sauvegardes. Ces classifications ne prouvent pas leur utilisation sur le site. Les références directes comptent les URL ; une référence par identifiant est affichée ci-dessus et concerne toute la famille.</p>';
+        echo '<details class="amf-file-accordion"><summary>Voir les '.esc_html(number_format_i18n($n)).' fichiers de cette famille</summary><p class="description">Originaux, miniatures et conversions. Une référence sur un fichier concerne toute la famille.</p>';
         echo '<div class="amf-files-lazy" data-loaded="0" data-scan-id="'.esc_attr($sid).'" data-family-key="'.esc_attr($family_key).'" data-attachment-id="'.esc_attr($id).'" data-file-id="'.esc_attr($file_id).'">Chargement...</div></details>';
     }
 
@@ -610,7 +578,7 @@ class AMF_Admin {
 		$total = (int) $this->wpdb->get_var( $this->wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}", $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = $this->wpdb->get_results( $this->wpdb->prepare( "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY FIELD(severity,'critical','manual','regenerable','warning'), id DESC LIMIT %d OFFSET %d", array_merge( $params, array( $per_page, ( $paged - 1 ) * $per_page ) ) ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		?>
-		<div class="amf-section-head"><div><h2>Qualité des images WooCommerce</h2><p class="description">Problèmes physiques relevés lors du dernier audit complet. La vérification rapide des affectations ne recalcule pas ces diagnostics.</p><p class="description">Les erreurs critiques sont affichées avant les interventions manuelles et les tailles régénérables.</p></div></div>
+		<div class="amf-section-head"><div><h2>Qualité des images WooCommerce</h2><p class="description">Images manquantes ou à corriger, classées par priorité.</p></div></div>
 		<?php if ( ! class_exists( 'WooCommerce' ) ) : ?><div class="notice notice-info inline"><p>WooCommerce n’est pas actif sur ce site : cet onglet n’a rien à auditer.</p></div><?php endif; ?>
 		<?php if ( ! $woo_ready ) : ?><div class="notice notice-info inline"><p><strong>Audit WooCommerce pas encore terminé.</strong> Les résultats ne sont pas encore exhaustifs.</p></div><?php endif; ?>
 		<form method="get" class="amf-filters"><input type="hidden" name="page" value="audit-medias"><input type="hidden" name="tab" value="woo"><input type="hidden" name="per_page" value="<?php echo esc_attr( $per_page ); ?>">
@@ -764,24 +732,35 @@ class AMF_Admin {
 		return in_array( $value, $allowed, true ) ? $value : absint( $default );
 	}
 
-	private function render_filter_form( $tab, $selects, $search, $total, $per_page ) {
-		echo '<form method="get" class="amf-filters"><input type="hidden" name="page" value="audit-medias"><input type="hidden" name="tab" value="' . esc_attr( $tab ) . '"><input type="hidden" name="per_page" value="' . esc_attr( $per_page ) . '">';
-		if ( isset( $_GET['orderby'] ) && is_scalar( $_GET['orderby'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			echo '<input type="hidden" name="orderby" value="' . esc_attr( sanitize_key( wp_unslash( $_GET['orderby'] ) ) ) . '">'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		}
-		if ( isset( $_GET['order'] ) && is_scalar( $_GET['order'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$order = 'asc' === strtolower( sanitize_key( wp_unslash( $_GET['order'] ) ) ) ? 'asc' : 'desc'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			echo '<input type="hidden" name="order" value="' . esc_attr( $order ) . '">';
-		}
-		foreach ( $selects as $name => $options ) {
-			$current = isset( $_GET[ $name ] ) && is_scalar( $_GET[ $name ] ) ? sanitize_key( wp_unslash( $_GET[ $name ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			echo '<select name="' . esc_attr( $name ) . '">';
-			foreach ( $options as $value => $label ) echo '<option value="' . esc_attr( $value ) . '" ' . selected( $current, $value, false ) . '>' . esc_html( $label ) . '</option>';
-			echo '</select>';
-		}
-		if ( false !== $search ) echo '<label class="screen-reader-text" for="amf-search">Rechercher</label><input id="amf-search" type="search" name="s" value="' . esc_attr( $search ) . '" placeholder="Nom, fichier ou identifiant">';
-		echo '<button class="button button-primary">Filtrer</button> <a class="button amf-reset-filters" href="' . esc_url(admin_url('tools.php?page=audit-medias&tab='.$tab.'&per_page='.$per_page)) . '">Effacer les filtres</a><span class="amf-filter-count">' . esc_html( number_format_i18n( $total ) ) . ' résultat(s)</span></form>';
-	}
+    private function render_filter_form( $tab, $selects, $search, $total, $per_page ) {
+        $advanced = array();
+        foreach (array('assoc','state') as $name) {
+            if (isset($selects[$name])) { $advanced[$name]=$selects[$name]; unset($selects[$name]); }
+        }
+        echo '<form method="get" class="amf-filters amf-client-filters"><input type="hidden" name="page" value="audit-medias"><input type="hidden" name="tab" value="'.esc_attr($tab).'"><input type="hidden" name="per_page" value="'.esc_attr($per_page).'">';
+        foreach (array('orderby','order') as $key) {
+            if (isset($_GET[$key]) && is_scalar($_GET[$key])) { echo '<input type="hidden" name="'.esc_attr($key).'" value="'.esc_attr(sanitize_key(wp_unslash($_GET[$key]))).'">'; }
+        }
+        if (false !== $search) { echo '<label class="screen-reader-text" for="amf-search">Rechercher un média</label><input id="amf-search" type="search" name="s" value="'.esc_attr($search).'" placeholder="Rechercher une image…">'; }
+        foreach ($selects as $name => $options) { $this->render_filter_select($name,$options); }
+        echo '<button class="button button-primary">Filtrer</button><a class="amf-reset-filters" href="'.esc_url(admin_url('tools.php?page=audit-medias&tab='.$tab.'&per_page='.$per_page)).'">Réinitialiser</a><span class="amf-filter-count">'.esc_html(number_format_i18n($total)).' résultat(s)</span>';
+        if ($advanced) {
+            $open = false;
+            foreach ($advanced as $name => $options) { if (isset($_GET[$name]) && is_scalar($_GET[$name]) && '' !== (string)$_GET[$name]) { $open=true; } }
+            echo '<details class="amf-advanced-filters"'.($open ? ' open' : '').'><summary>Filtres avancés</summary><div>';
+            foreach ($advanced as $name => $options) { $this->render_filter_select($name,$options); }
+            echo '</div></details>';
+        }
+        echo '</form>';
+    }
+
+    private function render_filter_select( $name, $options ) {
+        $current=isset($_GET[$name]) && is_scalar($_GET[$name]) ? sanitize_key(wp_unslash($_GET[$name])) : '';
+        $labels=array('wc_usage'=>'Affectation aux images produits','other_usage'=>'Utilisations sur le site','assoc'=>'Association des fichiers','state'=>'État des fichiers');
+        echo '<select name="'.esc_attr($name).'" aria-label="'.esc_attr(isset($labels[$name]) ? $labels[$name] : $name).'">';
+        foreach ($options as $value => $label) { echo '<option value="'.esc_attr($value).'" '.selected($current,$value,false).'>'.esc_html($label).'</option>'; }
+        echo '</select>';
+    }
 
 	private function pagination( $total, $per_page, $paged ) {
 		$total_pages = max( 1, (int) ceil( $total / max( 1, $per_page ) ) );

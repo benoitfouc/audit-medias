@@ -16,7 +16,21 @@ class AMF_Updates {
 		// WordPress evaluates this filter in cron and MainWP update checks too.
 		add_filter( 'update_plugins_github.com', array( __CLASS__, 'check_update' ), 10, 4 );
 		add_filter( 'plugins_api', array( __CLASS__, 'plugin_information' ), 10, 3 );
+		add_action( 'admin_post_amf_check_updates', array( __CLASS__, 'refresh_updates' ) );
 	}
+
+    /** Recheck metadata only; installation stays in WordPress's standard UI. */
+    public static function refresh_updates() {
+        if (!current_user_can('manage_options') || !current_user_can('update_plugins')) {
+            wp_die(esc_html__('Vous n’avez pas les droits nécessaires.', 'audit-medias'));
+        }
+        check_admin_referer('amf_check_updates');
+        delete_site_transient(self::CACHE_KEY);
+        delete_site_transient('update_plugins');
+        wp_update_plugins();
+        wp_safe_redirect(self_admin_url('update-core.php'));
+        exit;
+    }
 
 	/** Only intercept this plugin, never other GitHub-hosted extensions. */
 	public static function check_update( $update, $plugin_data, $plugin_file, $locales ) {

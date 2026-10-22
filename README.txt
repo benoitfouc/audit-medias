@@ -1,3 +1,37 @@
+Audit Médias - 2.3.4
+=====================
+Auteur : Benfou - https://www.benfou.fr/
+
+INTERFACE SIMPLIFIEE
+--------------------
+L'onglet Medias devient la vue principale des familles de fichiers.
+L'ancien inventaire WordPress (y compris les medias sans fichier) reste
+accessible dans Reglages > Technique / diagnostic. Les anciennes URL restent valides.
+Les details techniques et reglages fins sont replis par defaut.
+Les actions groupees figurent en haut et en bas du tableau : selection,
+action et progression sont partagees ; une seule file de suppression est lancee.
+Les confirmations et protections serveur sont conservees.
+Aucun changement du schema de base ni du moteur de detection.
+Reglages et resultats existants conserves. Pas de nouvel audit impose depuis 2.3.3.
+
+MISES A JOUR
+------------
+Depuis 2.3.3, une release publique stable v2.3.4 avec son asset
+ audit-medias-v2.3.4.zip permet une proposition dans WordPress / MainWP.
+Le client 2.3.3 peut conserver les metadonnees en cache jusqu'a six heures.
+A partir de 2.3.4, Reglages > Rechercher une mise a jour vide ce cache
+et ouvre l'ecran de mises a jour WordPress ; aucun ZIP n'est installe par ce bouton.
+Les preferences d'installation automatique du site ne sont pas modifiees.
+Ne jamais installer le lien GitHub "Source code (zip)".
+
+PRECAUTIONS
+-----------
+Aucune reference detectee ne garantit pas l'absence d'utilisation.
+Sauvegarder la base et uploads avant une suppression definitive.
+Les tests isoles ne remplacent pas une validation sur le site concerne.
+
+HISTORIQUE (les instructions ci-dessus priment)
+----------------------------------------------
 Audit Médias — 2.3.3
 ====================
 Auteur : Benfou, https://www.benfou.fr/
