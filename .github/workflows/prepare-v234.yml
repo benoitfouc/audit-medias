@@ -1,0 +1,80 @@
+name: Prepare verified 2.3.4 candidate
+
+on:
+  push:
+    branches: [release/v2.3.4]
+    paths: [.github/amf-v234.delta.b64]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prepare-audit-medias-234
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.repository == 'benoitfouc/audit-medias' && github.ref == 'refs/heads/release/v2.3.4'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Reconstruct exactly the locally tested files
+        run: |
+          python3 <<'PY'
+          import base64, hashlib, json, pathlib, zlib
+          root = pathlib.Path('.').resolve()
+          packed = ''.join((root / '.github/amf-v234.delta.b64').read_text().split())
+          raw = zlib.decompress(base64.b64decode(packed, validate=True))
+          assert hashlib.sha256(raw).hexdigest() == 'dd3e7ee41e2e03deb18bc03eeb8ad2a3eea77ed4933f3947f474628880340f0b'
+          payload = json.loads(raw)
+          assert payload['version'] == '2.3.4'
+          allowed = {'CHANGELOG.md', 'README.md', 'README.txt', 'assets/admin-client.css', 'assets/admin.js', 'audit-medias.php', 'docs/RELEASE-2.3.4.md', 'docs/VALIDATION-2.3.4.md', 'includes/class-amf-admin.php', 'includes/class-amf-updates.php', 'includes/class-amf-usage-view.php', 'tests/render-fixture.php', 'tests/updater-test.php'}
+          assert set(payload['files']) == allowed
+          staged = {}
+          for rel, entry in payload['files'].items():
+              path = root / rel
+              assert not path.is_symlink() and path.resolve().is_relative_to(root)
+              if entry['before'] is None:
+                  assert not path.exists(), 'New file already exists: ' + rel
+                  old = b''
+              else:
+                  old = path.read_bytes()
+                  digest = hashlib.sha1(b'blob ' + str(len(old)).encode() + b'\0' + old).hexdigest()
+                  assert digest == entry['before'], 'Base file changed: ' + rel
+              if 'edits' in entry:
+                  lines = old.decode('utf-8').splitlines(keepends=True)
+                  last = 0
+                  for edit in entry['edits']:
+                      assert last <= edit['start'] <= edit['end'] <= len(lines)
+                      last = edit['end']
+                  for edit in reversed(entry['edits']):
+                      lines[edit['start']:edit['end']] = [edit['text']]
+                  result = ''.join(lines).encode('utf-8')
+              else:
+                  result = entry['content'].encode('utf-8')
+              assert hashlib.sha256(result).hexdigest() == entry['sha256'], 'Output mismatch: ' + rel
+              staged[path] = result
+          for path, result in staged.items():
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(result)
+          pathlib.Path('/tmp/amf-candidate-files.txt').write_text('\n'.join(sorted(allowed)) + '\n')
+          print('Verified all 13 candidate files against their tested SHA-256 digests.')
+          PY
+      - name: Syntax and isolated regression tests
+        run: |
+          set -euo pipefail
+          find . -path './.git' -prune -o -type f -name '*.php' -print0 | xargs -0 -r -n 1 php -l
+          node --check assets/admin.js
+          php tests/updater-test.php
+          for args in 'tab=files' 'tab=dashboard' 'tab=settings' 'tab=woo' 'tab=errors' 'tab=media' 'tab=files&no_woo=1' 'tab=files&readonly=1' 'tab=files&empty=1' 'tab=files&stale=1' 'tab=files&old_scan=1' 'tab=dashboard&running=1' 'tab=dashboard&no_scan=1' 'tab=settings&no_scan=1' 'tab=files&assoc=unassociated&other_usage=none' 'tab=files&xss=1'; do
+            php tests/render-fixture.php "$args" > /dev/null
+          done
+          git diff --check
+      - name: Commit tested source on the release branch only
+        run: |
+          set -euo pipefail
+          git add --pathspec-from-file=/tmp/amf-candidate-files.txt
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'feat: simplify client UX and synchronize family bulk actions (2.3.4)'
+          git push origin HEAD:refs/heads/release/v2.3.4
