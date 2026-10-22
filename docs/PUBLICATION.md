@@ -17,6 +17,6 @@
 5. Vérifier que le ZIP contient **un seul dossier racine** `audit-medias/`.
 6. Tester l'installation ou le remplacement sur un site pilote avant toute diffusion.
 
-**Attention :** le plugin v2.3.2 ne propose pas encore de vérification automatique des mises à jour depuis GitHub. Cette fonction nécessitera une version ultérieure, installée au moins une fois sur les sites concernés.
+**Attention :** Le client de mise à jour GitHub est intégré à partir de la version 2.3.3 ; cette première version doit être installée manuellement.n automatique des mises à jour depuis GitHub. Cette fonction nécessitera une version ultérieure, installée au moins une fois sur les sites concernés.
 
 Ne pas publier de secrets, fichiers clients, bases de données ni données personnelles. Inspecter aussi l'historique Git avant de rendre un dépôt public.
