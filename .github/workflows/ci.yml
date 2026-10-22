@@ -1,0 +1,31 @@
+name: Vérifications du code
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.2', '8.4']
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+      - name: Configurer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: Vérifier tous les fichiers PHP
+        run: |
+          find . -path './.git' -prune -o -type f -name '*.php' -print0 | xargs -0 -r -n 1 php -l
+      - name: Vérifier JavaScript
+        run: node --check assets/admin.js
