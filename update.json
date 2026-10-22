@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "slug": "audit-medias",
+  "channel": "stable",
+  "version": "2.3.6",
+  "tag": "v2.3.6",
+  "package": "https://github.com/benoitfouc/audit-medias/releases/download/v2.3.6/audit-medias-v2.3.6.zip",
+  "sha256": "736e8eb659b952b9c44c4646aeefc503685f030f76ba11200a090796da67ff55",
+  "size": 102879,
+  "requires": "6.2",
+  "requires_php": "7.4",
+  "description": "# Audit Médias v2.3.6\n\n## Correction des mises à jour sur les hébergements mutualisés\n- La vérification ne passe plus par api.github.com : elle lit un manifeste JSON statique public.\n- Source principale : branche updates du dépôt, servie par raw.githubusercontent.com. Secours : manifeste joint à la dernière release publique.\n- Aucun jeton sur les sites. Aucun contournement des restrictions réseau configurées dans WordPress.\n- Cache positif d'une heure ; échec pendant dix minutes, avec respect de Retry-After lorsque fourni.\n- Validation stricte du slug, du canal stable, du tag, de l'URL officielle et de l'empreinte. Taille et SHA-256 du ZIP vérifiés avant extraction lors d'une mise à jour distante.\n- La publication produit le ZIP et le manifeste, vérifie leur accès public puis actualise le canal statique. Une archive déjà publiée n'est jamais remplacée.\n\nLa charte Benfou, les tableaux, le moteur de scan, les actions groupées et les protections de suppression sont inchangés. Aucun nouvel audit requis depuis 2.3.5. Les réglages d'installation automatique ne sont pas modifiés.\n\n## Depuis 2.3.3 / 2.3.4 / 2.3.5 bloquée par l'API\nInstaller l'extension temporaire **Benfou - Transition des mises a jour Audit Medias**, puis ouvrir **Outils > Transition Audit Médias** et rechercher la mise à jour. Elle remplace uniquement la source du client Audit Médias, n'installe rien et ne modifie pas les fichiers du plugin.\nEffectuer ensuite la mise à jour proposée dans WordPress, puis désactiver et supprimer l'outil de transition. Il devient inactif automatiquement à partir de 2.3.6.\n\nInstallation de secours : utiliser uniquement **audit-medias-v2.3.6.zip**, jamais **Source code (zip)**. Sauvegarder avant déployer.\n"
+}
