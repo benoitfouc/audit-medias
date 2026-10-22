@@ -1,40 +1,36 @@
-name: Vérifications du code
-
+name: Verifications du code
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
 permissions:
   contents: read
-
 jobs:
   syntax:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         php: ['7.4', '8.2', '8.4']
     steps:
-      - name: Récupérer le code
-        uses: actions/checkout@v4
-      - name: Configurer PHP
-        uses: shivammathur/setup-php@v2
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           coverage: none
-      - name: Vérifier tous les fichiers PHP
+      - name: PHP and JavaScript syntax
         run: |
           find . -path './.git' -prune -o -type f -name '*.php' -print0 | xargs -0 -r -n 1 php -l
-      - name: Vérifier JavaScript
-        run: node --check assets/admin.js
-      - name: Tester le client de mise à jour (HTTP simulé)
+          node --check assets/admin.js
+      - name: Update client regression tests (simulated HTTP)
         run: php tests/updater-test.php
-      - name: Tester les écrans (WordPress simulé)
+      - name: Interface fixtures (simulated WordPress)
         run: |
           set -euo pipefail
-          for args in 'tab=files' 'tab=dashboard' 'tab=settings' 'tab=woo' 'tab=errors' 'tab=media' 'tab=files&no_woo=1' 'tab=files&readonly=1' 'tab=files&empty=1' 'tab=files&stale=1' 'tab=files&old_scan=1' 'tab=dashboard&running=1' 'tab=dashboard&no_scan=1' 'tab=settings&no_scan=1' 'tab=files&assoc=unassociated&other_usage=none' 'tab=files&xss=1'; do
+          for args in 'tab=files' 'tab=dashboard' 'tab=settings' 'tab=woo' 'tab=errors' 'tab=media' 'tab=files&no_woo=1' 'tab=files&readonly=1' 'tab=files&empty=1' 'tab=files&stale=1' 'tab=files&old_scan=1' 'tab=dashboard&running=1' 'tab=dashboard&no_scan=1' 'tab=settings&no_scan=1' 'tab=files&assoc=unassociated&other_usage=none' 'tab=files&xss=1' 'tab=settings&amf_update_checked=1&update_error=1'; do
             php tests/render-fixture.php "$args" > /dev/null
             printf 'PASS %s\n' "$args"
           done
+      - name: Build and verify the installable package
+        run: python3 tools/build-package.py
