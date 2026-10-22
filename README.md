@@ -59,10 +59,13 @@ L'audit lui-même est **non destructif** : aucun fichier n'est supprimé à la f
 
 Le ZIP installable doit contenir le dossier racine `audit-medias/`, avec `audit-medias.php` à l'intérieur.
 
-1. Télécharger le ZIP dans les [**GitHub Releases**](../../releases), après publication d'une version.
+1. Dans [**GitHub Releases**](../../releases), télécharger l'asset **`audit-medias-vX.Y.Z.zip`** (exemple : `audit-medias-v2.3.3.zip`).
 2. Dans WordPress, ouvrir **Extensions → Ajouter une extension → Téléverser une extension**.
 3. Installer et activer le plugin.
 4. Pour une installation existante, **remplacer la version en place** : ne pas créer un second dossier de plugin.
+
+> [!CAUTION]
+> **N'installez jamais `Source code (zip)` ou `Source code (tar.gz)` depuis une release GitHub.** Ces archives automatiques contiennent le code source dans un dossier portant la version (`audit-medias-2.3.3/`) et peuvent installer une deuxième copie du plugin. Si le ZIP `audit-medias-vX.Y.Z.zip` n'est pas proposé dans **Assets**, vérifiez l'état du workflow [GitHub Actions](../../actions) et le tag de la release (qui doit commencer par `v`).
 
 | Compatibilité déclarée | Minimum |
 | --- | --- |
