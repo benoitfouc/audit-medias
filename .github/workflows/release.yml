@@ -1,60 +1,31 @@
 name: Publication du ZIP WordPress
-
 on:
   release:
     types: [published]
-
 permissions:
   contents: read
-
 jobs:
   build:
     if: ${{ !github.event.release.prerelease }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - name: Récupérer le code correspondant au tag
-        uses: actions/checkout@v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: ${{ github.event.release.tag_name }}
-
-      - name: Vérifier PHP et JavaScript
+      - name: Syntax and regression checks
         run: |
           find . -path './.git' -prune -o -type f -name '*.php' -print0 | xargs -0 -r -n 1 php -l
           node --check assets/admin.js
-
-      - name: Vérifier le tag et les deux numéros de version
+          php tests/updater-test.php
+          php tests/render-fixture.php 'tab=settings&amf_update_checked=1' > /dev/null
+      - name: Build the canonical WordPress ZIP
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          php <<'PHP'
-          <?php
-          $source = file_get_contents('audit-medias.php');
-          $header_ok = preg_match('/^[ \t]*\*[ \t]*Version:\s*([0-9.]+)/m', $source, $header);
-          $constant_ok = preg_match("/define\(\s*'AMF_VERSION'\s*,\s*'([0-9.]+)'\s*\)/", $source, $constant);
-          if (!$header_ok || !$constant_ok || $header[1] !== $constant[1] || 'v' . $header[1] !== getenv('RELEASE_TAG')) {
-              fwrite(STDERR, "Le tag de release doit etre au format vX.Y.Z, par exemple v2.3.3, et correspondre a Version et AMF_VERSION.\n");
-              exit(1);
-          }
-          echo "Version valide : {$header[1]}\n";
-          PHP
-
-      - name: Construire le ZIP installable dans WordPress
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          set -eu
-          mkdir -p dist/audit-medias
-          cp audit-medias.php README.txt dist/audit-medias/
-          cp -R assets includes dist/audit-medias/
-          cd dist
-          zip -qr "audit-medias-${RELEASE_TAG}.zip" audit-medias
-          unzip -t "audit-medias-${RELEASE_TAG}.zip"
-
-      - name: Joindre le ZIP à la release publique
+        run: python3 tools/build-package.py --tag "$RELEASE_TAG"
+      - name: Attach ZIP (never overwrite a distributed asset)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          gh release upload "$RELEASE_TAG" "dist/audit-medias-${RELEASE_TAG}.zip"
+        run: gh release upload "$RELEASE_TAG" "dist/audit-medias-${RELEASE_TAG}.zip"
