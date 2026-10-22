@@ -96,14 +96,14 @@ class AMF_Usage_View {
         $s = $this->products->status();
         if ( ! $s['available'] ) { return '<span class="amf-text-muted">WooCommerce inactif</span>'; }
         if ( ! $attachment_id ) {
-            return '<span class="amf-text-muted">Sans média WordPress identifié</span><small class="amf-cell-note">Les références par URL sont indiquées à droite.</small>';
+            return '<span class="amf-text-muted">Sans média WordPress identifié</span>';
         }
         if ( $uncertain ) {
             return '<span class="amf-badge amf-probable">Association de fichiers à vérifier</span><small class="amf-cell-note">Le rapprochement avec le média repose sur le nom. Voir les détails.</small>';
         }
         if ( ! $refs ) {
             return $s['ready']
-                ? '<strong class="amf-usage-absent">Absente des images produits</strong><small class="amf-cell-note">Ni principale, ni galerie, ni image de variation.</small>'
+                ? '<strong class="amf-usage-absent">Absente des images produits</strong>'
                 : '<span class="amf-badge amf-pending">À vérifier</span><small class="amf-cell-note">Aucune conclusion avant la fin de la vérification WooCommerce.</small>';
         }
         $html = $s['ready'] ? '' : '<small class="amf-cell-note amf-stale">Dernière vérification - actualisation nécessaire</small>';
@@ -128,6 +128,7 @@ class AMF_Usage_View {
     private function direct_file_usage_html( $direct_count, $compact = true ) {
         $direct_count = max( 0, (int) $direct_count );
         if ( ! $direct_count ) { return ''; }
+        if ($compact) { return '<span class="amf-badge amf-used">Référence URL détectée</span>'; }
         return '<div class="amf-direct-family-usage"><strong>URL(s) de fichiers de cette famille retrouvée(s) : '
             . esc_html( number_format_i18n( $direct_count ) ) . '</strong>'
             . '<small class="amf-cell-note">Au moins un original, une miniature ou une conversion est cité par URL dans le dernier audit. '
@@ -142,7 +143,7 @@ class AMF_Usage_View {
         if ( ! $refs ) {
             if ( $count > 0 ) { return '<span class="amf-badge amf-probable">' . esc_html($count) . ' référence(s) - ouvrir les détails</span>' . $direct; }
             if ( $direct ) { return $direct; } // Never claim absence when one physical variant has a reference.
-            return $ready ? '<span class="amf-text-muted">Aucune autre référence détectée (URLs comprises)</span>'
+            return $ready ? '<span class="amf-text-muted">' . ($this->products->available() ? 'Aucune autre référence détectée' : 'Aucune référence détectée') . '</span>'
                 : '<span class="amf-badge amf-pending">Audit des références en attente</span>';
         }
         $html = '<div class="amf-reference-list">';
@@ -152,7 +153,7 @@ class AMF_Usage_View {
             $html .= '<div class="amf-reference"><strong class="amf-reference-role">' . esc_html($link['role']) . '</strong>';
             if ( 'probable' === $ref['confidence'] ) { $html .= '<small class="amf-probable-tag">Rapprochement à confirmer</small>'; }
             $html .= $link['url'] ? '<a href="' . esc_url($link['url']) . '" target="_blank" rel="noopener noreferrer">' . esc_html($link['title']) . ' &#8599;</a>' : '<span>' . esc_html($link['title']) . '</span>';
-            if ( $link['note'] ) { $html .= '<small class="amf-cell-note">' . esc_html($link['note']) . '</small>'; }
+            if ( ! $compact && $link['note'] ) { $html .= '<small class="amf-cell-note">' . esc_html($link['note']) . '</small>'; }
             if ( ! $compact && ! empty($ref['edit_url']) ) { $html .= '<small class="amf-cell-note"><a href="' . esc_url($ref['edit_url']) . '">Modifier</a></small>'; }
             $html .= '</div>';
         }

@@ -1,11 +1,19 @@
 # Historique des versions — Audit Médias
 
+## 2.3.4 — 22 octobre 2026
+- Interface simplifiée : en-tête compact, onglet Médias centré sur les familles et suppression des explications répétées.
+- L'inventaire WordPress reste accessible dans Réglages > Technique / diagnostic, avec conservation des anciennes URL et des fiches détaillées.
+- Horodatages techniques, statistiques détaillées et périmètre d'analyse regroupés dans le diagnostic. Aucun journal supplémentaire activé.
+- Filtres avancés repliables ; le filtre actif reste visible. Colonnes et navigation WooCommerce masquées quand WooCommerce est absent.
+- Actions groupées en haut ET en bas du tableau, sélections synchronisées et verrouillage pendant une suppression.
+- Les confirmations renforcées et les protections côté serveur sont inchangées.
+- Recherche manuelle de mises à jour dans les réglages, avec contrôle des droits et nonce, sans installation automatique.
+- Aucun changement de schéma, de réglages enregistrés ou de moteur d'analyse. Un audit compatible existant reste utilisable.
+
 ## 2.3.3 — 22 octobre 2026
-- Interface clarifiée : en-tête de présentation, états de sécurité et de scan, parcours guidé, filtres plus lisibles et affichage responsive.
-- Suppressions : un attachment ne peut plus être supprimé directement si un dérivé possède une référence URL détectée.
-- Contrôle des sous-tailles et sauvegardes WordPress créées depuis le dernier scan avant toute suppression.
-- Détection des futures mises à jour via les GitHub Releases publiques grâce au mécanisme natif WordPress Update URI, sans jeton.
-- Aucune migration de base : réglages et résultats existants conservés.
+- Présentation et tableaux modernisés.
+- Protection de la suppression des dérivés référencés par URL et des nouveaux fichiers déclarés depuis le scan.
+- Détection des mises à jour via les GitHub Releases publiques et Update URI, sans jeton.
 
 ## 2.3.2 — 22 octobre 2026
 - Amélioration des shortcodes, arrière-plans WPBakery et URL CDN / Jetpack Photon.
