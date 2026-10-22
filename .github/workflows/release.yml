@@ -1,31 +1,44 @@
-name: Publication du ZIP WordPress
+name: Publication du ZIP et du manifeste statique
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag stable existant, par exemple v2.3.6'
+        required: true
+        type: string
 permissions:
   contents: read
+concurrency:
+  group: audit-medias-publication
+  cancel-in-progress: false
 jobs:
   build:
-    if: ${{ !github.event.release.prerelease }}
+    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
       - name: Syntax and regression checks
         run: |
-          find . -path './.git' -prune -o -type f -name '*.php' -print0 | xargs -0 -r -n 1 php -l
+          set -euo pipefail
+          find includes tools -type f -name '*.php' -print0 | xargs -0 -r -n 1 php -l
+          php -l audit-medias.php
           node --check assets/admin.js
           php tests/updater-test.php
-          php tests/render-fixture.php 'tab=settings&amf_update_checked=1' > /dev/null
-      - name: Build the canonical WordPress ZIP
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: python3 tools/build-package.py --tag "$RELEASE_TAG"
-      - name: Attach ZIP (never overwrite a distributed asset)
+          php tests/transition-test.php 2.3.3
+          php tests/transition-test.php 2.3.6
+      - name: Publish immutable ZIP and static manifest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$RELEASE_TAG" "dist/audit-medias-${RELEASE_TAG}.zip"
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: python3 tools/publish-release.py --tag "$RELEASE_TAG"

@@ -7,11 +7,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Official WordPress Update URI integration for the public Benfou releases.
  * No third-party library, GitHub credentials or client-specific configuration.
  */
+if (!class_exists('AMF_Static_Manifest', false)) { require_once __DIR__.'/class-amf-static-manifest.php'; }
 class AMF_Updates {
 	const REPOSITORY = 'benoitfouc/audit-medias';
 	const UPDATE_URI = 'https://github.com/benoitfouc/audit-medias';
-	const CACHE_KEY  = 'amf_github_release_v1';
-	const DIAGNOSTIC_KEY = 'amf_update_diagnostic_v1';
+	const CACHE_KEY  = 'amf_static_release_v1';
+	const DIAGNOSTIC_KEY = 'amf_static_diagnostic_v1';
 	const PLUGIN_BASENAME = 'audit-medias/audit-medias.php';
 
 	public static function register() {
@@ -19,6 +20,7 @@ class AMF_Updates {
 		add_filter( 'update_plugins_github.com', array( __CLASS__, 'check_update' ), 10, 4 );
 		add_filter( 'plugins_api', array( __CLASS__, 'plugin_information' ), 10, 3 );
 		add_action( 'admin_post_amf_check_updates', array( __CLASS__, 'refresh_updates' ) );
+		add_filter('upgrader_pre_download', array('AMF_Static_Manifest', 'pre_download'), 10, 4);
 	}
 
 	/** Explicit admin action: clear update metadata, never install anything. */
@@ -36,7 +38,7 @@ class AMF_Updates {
 		}
 		wp_update_plugins();
 		// The native callback is skipped by core if WordPress.org fails first.
-		// Query our fixed endpoint anyway, then merge this plugin only.
+		// Query our fixed static endpoint anyway, then merge this plugin only.
 		$release = self::latest_release();
 		if ($release) { self::sync_wordpress($release); }
 		wp_safe_redirect(admin_url('tools.php?page=audit-medias&tab=settings&amf_update_checked=1#amf-updates'));
@@ -45,33 +47,11 @@ class AMF_Updates {
 
 	/** Keep every other plugin's metadata and automatic-update preferences. */
 	private static function sync_wordpress($release) {
-		$file = plugin_basename(AMF_PLUGIN_FILE);
-		if ($file !== self::PLUGIN_BASENAME) { return; }
-		$current = get_site_transient('update_plugins');
-		if (!is_object($current)) { $current = new stdClass(); }
-		foreach (array('response','no_update','checked') as $key) {
-			if (!isset($current->$key) || !is_array($current->$key)) { $current->$key = array(); }
+		if (self::PLUGIN_BASENAME === plugin_basename(AMF_PLUGIN_FILE)) {
+			AMF_Static_Manifest::sync_wordpress($release, AMF_VERSION);
 		}
-		$offer = (object) self::offer($release);
-		$offer->id = self::UPDATE_URI;
-		$offer->plugin = $file;
-		$offer->new_version = $release['version'];
-		$current->checked[$file] = AMF_VERSION;
-		unset($current->response[$file], $current->no_update[$file]);
-		if (version_compare($release['version'], AMF_VERSION, '>')) {
-			$current->response[$file] = $offer;
-		} else { $current->no_update[$file] = $offer; }
-		// Do not change last_checked: it belongs to the whole WordPress check.
-		set_site_transient('update_plugins', $current);
 	}
-
-	private static function offer($release) {
-		return array(
-			'slug' => 'audit-medias', 'version' => $release['version'],
-			'url' => self::UPDATE_URI . '/releases/tag/' . $release['tag'],
-			'package' => $release['package'], 'requires' => '6.2', 'requires_php' => '7.4',
-		);
-	}
+	private static function offer($release) { return AMF_Static_Manifest::offer($release); }
 
 	/** Only intercept this plugin, never other GitHub-hosted extensions. */
 	public static function check_update( $update, $plugin_data, $plugin_file, $locales ) {
@@ -105,8 +85,8 @@ class AMF_Updates {
 			'version'       => $release['version'],
 			'author'        => '<a href="https://www.benfou.fr/">Benfou</a>',
 			'homepage'      => self::UPDATE_URI,
-			'requires'      => '6.2',
-			'requires_php'  => '7.4',
+			'requires'      => $release['requires'],
+			'requires_php'  => $release['requires_php'],
 			'download_link' => $release['package'],
 			'sections'      => array(
 				'description' => '<p>Audit des médias WordPress, recherche des références et suppression manuelle contrôlée des familles de fichiers.</p><p><a href="' . esc_url( self::UPDATE_URI ) . '">Code source et documentation GitHub</a>.</p>',
@@ -115,79 +95,10 @@ class AMF_Updates {
 		);
 	}
 
-	/** Cached, fixed HTTPS endpoint. No credentials, media or site data sent. */
-	private static function latest_release() {
-		$cached = get_site_transient(self::CACHE_KEY);
-		if (is_array($cached) && isset($cached['state'])) {
-			if ('unavailable' === $cached['state']) { return false; }
-			$release = self::read_cached_release($cached);
-			if ($release) { return $release; }
-		}
-		$response = wp_remote_get('https://api.github.com/repos/' . self::REPOSITORY . '/releases/latest', array(
-			'timeout' => 8, 'redirection' => 2, 'limit_response_size' => 524288,
-			'headers' => array('Accept'=>'application/vnd.github+json','X-GitHub-Api-Version'=>'2022-11-28'),
-			'user-agent' => 'Audit-Medias/' . AMF_VERSION . ' (WordPress)',
-		));
-		$ttl = 30 * MINUTE_IN_SECONDS;
-		if (is_wp_error($response)) {
-			$code = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)$response->get_error_code());
-			// Do not retain raw error messages: they may expose paths or URLs.
-			self::record_result(false, 'network_error', 0, $ttl, array(), substr($code, 0, 80));
-			return false;
-		}
-		$http = (int)wp_remote_retrieve_response_code($response);
-		$limits = array();
-		foreach (array('x-ratelimit-remaining'=>'remaining','x-ratelimit-reset'=>'reset') as $header=>$key) {
-			$value = wp_remote_retrieve_header($response, $header);
-			if (is_scalar($value) && preg_match('/^[0-9]+$/D', (string)$value)) { $limits[$key] = (int)$value; }
-		}
-		if (200 !== $http) {
-			$status = 'http_error';
-			if (404 === $http) { $status = 'no_release'; }
-			if (429 === $http || (403 === $http && isset($limits['remaining']) && 0 === $limits['remaining'])) {
-				$status = 'rate_limited';
-				if (!empty($limits['reset'])) { $ttl = max(60, min(HOUR_IN_SECONDS, $limits['reset'] - time())); }
-			}
-			self::record_result(false, $status, $http, $ttl, $limits);
-			return false;
-		}
-		$body = json_decode(wp_remote_retrieve_body($response), true);
-		if (JSON_ERROR_NONE !== json_last_error() || !is_array($body)) {
-			self::record_result(false, 'invalid_json', $http, $ttl, $limits);
-			return false;
-		}
-		$release = self::validate_release($body);
-		if (!$release) {
-			$stable = empty($body['draft']) && empty($body['prerelease']) && isset($body['tag_name']) && is_string($body['tag_name']) && preg_match('/^v[0-9]+\.[0-9]+\.[0-9]+$/D', $body['tag_name']);
-			self::record_result(false, $stable ? 'missing_asset' : 'invalid_release', $http, $ttl, $limits);
-			return false;
-		}
-		self::record_result($release, 'ok', $http, 6 * HOUR_IN_SECONDS, $limits);
-		return $release;
-	}
-
+	/** Static publication channel: no REST API and no personal token. */
+	private static function latest_release() { return AMF_Static_Manifest::fetch(); }
 	private static function read_cached_release($cached) {
-		if (!is_array($cached) || !isset($cached['state'],$cached['release']) || 'ok' !== $cached['state'] || !is_array($cached['release'])) { return false; }
-		$r = $cached['release'];
-		if (!isset($r['tag'],$r['package']) || !is_string($r['tag']) || !is_string($r['package'])) { return false; }
-		return self::validate_release(array(
-			'tag_name'=>$r['tag'], 'draft'=>false, 'prerelease'=>false,
-			'body'=>isset($r['description']) ? $r['description'] : '',
-			'assets'=>array(array('name'=>'audit-medias-'.$r['tag'].'.zip','browser_download_url'=>$r['package'])),
-		));
-	}
-
-	private static function record_result($release, $status, $http, $ttl, $limits=array(), $error='') {
-		$now = time();
-		$previous = get_site_option(self::DIAGNOSTIC_KEY, array());
-		$report = array('status'=>$status, 'checked_at'=>$now, 'expires_at'=>$now+$ttl,
-			'http'=>$http, 'error_code'=>$error, 'rate_limit'=>$limits,
-			'last_success_at'=>$release ? $now : (is_array($previous) && isset($previous['last_success_at']) ? (int)$previous['last_success_at'] : 0));
-		if ($release) { $report['version'] = $release['version']; }
-		update_site_option(self::DIAGNOSTIC_KEY, $report);
-		$cache = array('state'=>$release ? 'ok' : 'unavailable','checked_at'=>$now,'expires_at'=>$now+$ttl);
-		if ($release) { $cache['release'] = $release; }
-		set_site_transient(self::CACHE_KEY, $cache, $ttl);
+		return AMF_Static_Manifest::cached();
 	}
 
 	/** Read-only: opening the settings does not make an HTTP request. */
@@ -218,12 +129,12 @@ class AMF_Updates {
 		if (!current_user_can('manage_options')) { return; }
 		$r = self::diagnostics();
 		$messages = array(
-			'ok'=>'Réponse GitHub valide et ZIP installable identifié.',
+			'ok'=>'Manifeste statique valide et ZIP officiel identifié (sans API GitHub).',
 			'network_error'=>'Connexion HTTPS impossible : vérifiez DNS, certificat et accès sortants de l’hébergement.',
-			'http_error'=>'GitHub a refusé ou n’a pas pu traiter la requête. Consultez le code HTTP ci-dessous.',
-			'no_release'=>'Aucune release publique accessible à cette adresse (HTTP 404).',
-			'rate_limited'=>'Limite de requêtes GitHub atteinte. Une IP partagée entre plusieurs sites peut en être la cause.',
-			'invalid_json'=>'La réponse reçue ne contient pas de JSON valide.',
+			'http_error'=>'La source statique a refusé ou n’a pas pu traiter la requête. Consultez le code HTTP ci-dessous.',
+			'not_published'=>'Manifeste statique indisponible (HTTP 404). Consultez le résultat de publication.',
+			'rate_limited'=>'La source statique demande de patienter (HTTP 429). Ce n’est pas le quota de l’API REST GitHub.',
+			'invalid_manifest'=>'Manifeste refusé : format, version, URL du ZIP ou empreinte incorrects.',
 			'missing_asset'=>'La release est visible mais son ZIP installable officiel manque ou son URL ne correspond pas.',
 			'invalid_release'=>'La release ne respecte pas le format stable attendu (tag vX.Y.Z).',
 		);
@@ -234,12 +145,21 @@ class AMF_Updates {
 			'Dernière tentative HTTP'=>self::format_time(isset($r['checked_at']) ? $r['checked_at'] : 0),
 			'Dernière réponse valide'=>self::format_time(isset($r['last_success_at']) ? $r['last_success_at'] : 0),
 			'Code HTTP'=>isset($r['http']) && $r['http'] ? (string)$r['http'] : 'Non enregistré',
-			'Cache GitHub'=>$r['cache_active'] ? ($r['cache_expires_at'] ? 'Expire le '.self::format_time($r['cache_expires_at']) : 'Actif (ancien cache, expiration non enregistrée)') : 'Absent ou expiré',
-			'Version dans le cache GitHub'=>$r['detected_version'] ?: 'Non disponible',
+			'Cache du manifeste'=>$r['cache_active'] ? ($r['cache_expires_at'] ? 'Expire le '.self::format_time($r['cache_expires_at']) : 'Actif (ancien cache, expiration non enregistrée)') : 'Absent ou expiré',
+			'Version du manifeste'=>$r['detected_version'] ?: 'Non disponible',
 			'Version proposée par WordPress'=>$r['wordpress_version'] ?: 'Aucune actuellement',
 			'Dernière vérification WordPress'=>self::format_time($r['wordpress_checked_at']),
-			'Point de contrôle'=>'https://api.github.com/repos/'.self::REPOSITORY.'/releases/latest',
+			'Source utilisée'=>isset($r['source']) ? $r['source'] : AMF_Static_Manifest::SOURCE,
+			'Source statique de secours'=>AMF_Static_Manifest::FALLBACK,
+			'API GitHub'=>'Non utilisée depuis la 2.3.6',
 		);
+		if (!empty($r['attempts']) && is_array($r['attempts'])) {
+			foreach ($r['attempts'] as $index=>$attempt) {
+				if (is_array($attempt) && isset($attempt['http'],$attempt['status'])) {
+					$rows['Source '.($index+1)] = 'HTTP '.(int)$attempt['http'].' / '.sanitize_key($attempt['status']);
+				}
+			}
+		}
 		if (!empty($r['error_code'])) { $rows['Erreur réseau'] = $r['error_code']; }
 		if (isset($r['rate_limit']['remaining'])) { $rows['Requêtes GitHub restantes'] = (string)$r['rate_limit']['remaining']; }
 		if (!empty($r['rate_limit']['reset'])) { $rows['Réinitialisation du quota'] = self::format_time($r['rate_limit']['reset']); }
@@ -264,7 +184,7 @@ class AMF_Updates {
 		<?php
 	}
 
-	/** Strictly allow ZIP assets published from our own repository only. */
+	/** Legacy validation helper retained for diagnostic compatibility; never fetches the API. */
 	public static function validate_release( $release ) {
 		if ( ! is_array( $release ) || ! empty( $release['draft'] ) || ! empty( $release['prerelease'] ) ||
 			! isset( $release['tag_name'], $release['assets'] ) || ! is_string($release['tag_name']) || ! is_array( $release['assets'] ) ) {

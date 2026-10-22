@@ -1,94 +1,99 @@
 <?php
-/* Isolated WordPress/HTTP substitutes: no requests or installations. */
-if (PHP_SAPI !== 'cli') { http_response_code(403); exit; }
+/* Isolated regression tests. No real HTTP, database or installation. */
+if (PHP_SAPI !== 'cli') { exit; }
 error_reporting(E_ALL);
 set_error_handler(function($l,$m,$f,$n){throw new RuntimeException($m.' at '.$f.':'.$n);});
-define('ABSPATH','/fixture/');define('AMF_VERSION','2.3.5');
-define('AMF_PLUGIN_FILE','/plugins/audit-medias/audit-medias.php');
-define('MINUTE_IN_SECONDS',60);define('HOUR_IN_SECONDS',3600);
-$GLOBALS['cache']=array();$GLOBALS['options']=array();$GLOBALS['filters']=array();$GLOBALS['http_count']=0;
-$GLOBALS['allowed']=true;$GLOBALS['nonce_ok']=true;$GLOBALS['core_checks']=0;
-$GLOBALS['basename']='audit-medias/audit-medias.php';
-function add_filter($hook,...$a){$GLOBALS['filters'][]=$hook;}function add_action($hook,...$a){$GLOBALS['filters'][]=$hook;}
-function plugin_basename($file){return $GLOBALS['basename'];}
-function get_site_transient($key){return isset($GLOBALS['cache'][$key])?$GLOBALS['cache'][$key]:false;}
-function set_site_transient($key,$v,$ttl=0){$GLOBALS['cache'][$key]=$v;$GLOBALS['ttls'][$key]=$ttl;}
-function delete_site_transient($key){unset($GLOBALS['cache'][$key]);}
-function get_site_option($key,$default=false){return isset($GLOBALS['options'][$key])?$GLOBALS['options'][$key]:$default;}
-function update_site_option($key,$v){$GLOBALS['options'][$key]=$v;}
-function wp_remote_get($url,$args){$GLOBALS['http_count']++;$GLOBALS['http_url']=$url;$GLOBALS['http_args']=$args;return $GLOBALS['response'];}
-function wp_remote_retrieve_response_code($r){return $r['code'];}function wp_remote_retrieve_body($r){return $r['body'];}
-function wp_remote_retrieve_header($r,$key){return isset($r['headers'][$key])?$r['headers'][$key]:'';}
-class WP_Error {function get_error_code(){return 'http_request_failed';}function get_error_message(){return 'Sensitive /private/path?token=secret';}}
+define('ABSPATH','/fixture/'); define('AMF_VERSION','2.3.6');
+define('AMF_PLUGIN_FILE','/plugins/audit-medias/audit-medias.php'); define('MINUTE_IN_SECONDS',60); define('HOUR_IN_SECONDS',3600);
+$GLOBALS['cache']=array();$GLOBALS['options']=array();$GLOBALS['hooks']=array();$GLOBALS['requests']=array();$GLOBALS['ttls']=array();
+$GLOBALS['allowed']=true;$GLOBALS['nonce_ok']=true;$GLOBALS['base']='audit-medias/audit-medias.php';$GLOBALS['checks']=0;
+function add_filter($h,$c,$p=10,$a=1){$GLOBALS['hooks'][$h][]=$c;} function add_action($h,$c,$p=10,$a=1){add_filter($h,$c,$p,$a);}
+function plugin_basename($p){return $GLOBALS['base'];}
+function get_site_transient($k){return isset($GLOBALS['cache'][$k])?$GLOBALS['cache'][$k]:false;}
+function set_site_transient($k,$v,$ttl=0){$GLOBALS['cache'][$k]=$v;$GLOBALS['ttls'][$k]=$ttl;}
+function delete_site_transient($k){unset($GLOBALS['cache'][$k]);}
+function get_site_option($k,$d=false){return isset($GLOBALS['options'][$k])?$GLOBALS['options'][$k]:$d;}
+function update_site_option($k,$v){$GLOBALS['options'][$k]=$v;}
+function wp_remote_get($url,$args){$GLOBALS['requests'][]=array($url,$args);return array_shift($GLOBALS['responses']);}
+function wp_remote_retrieve_response_code($r){return $r['code'];} function wp_remote_retrieve_body($r){return $r['body'];}
+function wp_remote_retrieve_header($r,$k){return isset($r['headers'][$k])?$r['headers'][$k]:'';}
+class WP_Error {public $code;public $message;function __construct($c='http_request_failed',$m='Sensitive /path?token=secret'){$this->code=$c;$this->message=$m;}function get_error_code(){return $this->code;}function get_error_message(){return $this->message;}}
 function is_wp_error($v){return $v instanceof WP_Error;}
 function esc_html($v){return htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');}function esc_attr($v){return esc_html($v);}function esc_url($v){return esc_html($v);}function esc_html__($v,$d=''){return esc_html($v);}
-function current_user_can($cap){return $GLOBALS['allowed'];}function wp_die($s){throw new RuntimeException('DENIED');}
+function sanitize_key($s){return preg_replace('/[^a-z0-9_\-]/','',strtolower($s));}
+function current_user_can($c){return $GLOBALS['allowed'];}function wp_die($s){throw new RuntimeException('DENIED');}
 function check_admin_referer($a){if(!$GLOBALS['nonce_ok'])throw new RuntimeException('NONCE');}
 function admin_url($s){return '/wp-admin/'.$s;}function self_admin_url($s){return admin_url($s);}
-function wp_nonce_field($a){echo '<input type="hidden" name="_wpnonce" value="test">';}
-function wp_date($format,$timestamp){return gmdate($format,$timestamp);}
-function wp_update_plugins(){$GLOBALS['core_checks']++;/* Simulate early WP.org failure. */}
-function wp_safe_redirect($url){$GLOBALS['redirect']=$url;throw new RuntimeException('REDIRECT');}
-function check($c,$name){if(!$c)throw new RuntimeException('FAIL '.$name);echo 'PASS '.$name.PHP_EOL;$GLOBALS['passes']++;}
-$GLOBALS['passes']=0;
+function wp_nonce_field($s){echo '<input name="_wpnonce">';}function wp_date($f,$t){return gmdate($f,$t);}
+function wp_update_plugins(){$GLOBALS['checks']++;} /* WordPress.org early return. */
+function wp_safe_redirect($s){throw new RuntimeException('REDIRECT');}
+function download_url($u,$t){$GLOBALS['downloads']++;return $GLOBALS['download_file'];}
+$GLOBALS['downloads']=0;$GLOBALS['passes']=0;
+function check($c,$name){if(!$c)throw new RuntimeException('FAIL '.$name);$GLOBALS['passes']++;echo 'PASS '.$name.PHP_EOL;}
+function expect($fn,$code,$name){try{$fn();throw new RuntimeException('NOT_THROWN');}catch(RuntimeException $e){check($code===$e->getMessage(),$name);}}
+function fixture($v='2.3.7') {return array('schema'=>1,'slug'=>'audit-medias','channel'=>'stable','version'=>$v,'tag'=>'v'.$v,'package'=>'https://github.com/benoitfouc/audit-medias/releases/download/v'.$v.'/audit-medias-v'.$v.'.zip','sha256'=>hash('sha256','zip fixture'),'size'=>strlen('zip fixture'),'requires'=>'6.2','requires_php'=>'7.4','description'=>'Notes <script>bad</script>');}
+function response($data,$code=200,$headers=array()){return array('code'=>$code,'body'=>is_string($data)?$data:json_encode($data),'headers'=>$headers);}
+function reset_http($responses){$GLOBALS['cache']=array();$GLOBALS['requests']=array();$GLOBALS['responses']=$responses;}
 require __DIR__.'/../includes/class-amf-updates.php';
 AMF_Updates::register();
-check(in_array('update_plugins_github.com',$GLOBALS['filters'],true),'native filter registered outside admin-only code');
-check(!in_array('auto_update_plugin',$GLOBALS['filters'],true),'automatic installation not enabled');
-function release_fixture($version='2.3.6'){
- return array('tag_name'=>'v'.$version,'draft'=>false,'prerelease'=>false,'body'=>'Notes <script>alert(1)</script>',
- 'assets'=>array(array('name'=>'audit-medias-v'.$version.'.zip','browser_download_url'=>'https://github.com/benoitfouc/audit-medias/releases/download/v'.$version.'/audit-medias-v'.$version.'.zip')));
+check(isset($GLOBALS['hooks']['update_plugins_github.com']),'native hook registered');
+check(isset($GLOBALS['hooks']['upgrader_pre_download']),'checksum hook registered');
+check(!isset($GLOBALS['hooks']['auto_update_plugin']),'no forced automatic installation');
+$r=fixture();check(AMF_Static_Manifest::validate($r)===$r,'canonical manifest accepted');
+foreach(array(null,42,'x',array(),array('schema'=>1)) as $bad)check(false===AMF_Static_Manifest::validate($bad),'reject malformed structure');
+foreach(array('schema'=>2,'slug'=>'other','channel'=>'beta','version'=>'02.3.7','tag'=>'v2.3.8','sha256'=>'xxx','size'=>'11','requires'=>array(),'requires_php'=>'abc','draft'=>true,'prerelease'=>true) as $k=>$v){$b=$r;$b[$k]=$v;check(false===AMF_Static_Manifest::validate($b),'reject invalid '.$k);}
+foreach(array('2.3.7-beta','../x','2.3','2.3.7/evil',array()) as $v){$b=$r;$b['version']=$v;check(false===AMF_Static_Manifest::validate($b),'reject version variant');}
+foreach(array('http://github.com/a.zip','https://evil.test/a.zip',$r['package'].'?secret=x',str_replace('/releases/download/','/archive/',$r['package'])) as $url){$b=$r;$b['package']=$url;check(false===AMF_Static_Manifest::validate($b),'reject foreign or source ZIP URL');}
+$h=array('UpdateURI'=>AMF_Updates::UPDATE_URI);
+reset_http(array(response($r)));
+check(AMF_Updates::check_update('same',$h,'other/other.php',array())==='same' && !$GLOBALS['requests'],'unrelated plugin untouched');
+$u=AMF_Updates::check_update(false,$h,AMF_Static_Manifest::FILE,array());
+check($u['version']==='2.3.7' && $u['package']===$r['package'],'native update offers real newer release');
+check(!isset($u['autoupdate']),'no autoupdate override');
+check($GLOBALS['requests'][0][0]===AMF_Static_Manifest::SOURCE,'primary endpoint is static');
+$args=$GLOBALS['requests'][0][1];check($args['sslverify'] && $args['reject_unsafe_urls'] && $args['limit_response_size']===131073,'TLS and bounded response');
+check($GLOBALS['ttls'][AMF_Static_Manifest::CACHE]===3600,'one-hour positive cache');
+AMF_Static_Manifest::fetch();check(count($GLOBALS['requests'])===1,'positive cache reused');
+$d=AMF_Updates::diagnostics();check($d['detected_version']==='2.3.7' && $d['http']===200,'diagnostics show real cached version');
+ob_start();AMF_Updates::render_settings();$html=ob_get_clean();check(count($GLOBALS['requests'])===1 && strpos($html,'_wpnonce')!==false,'settings read-only and protected');
+$info=AMF_Updates::plugin_information(false,'plugin_information',(object)array('slug'=>'audit-medias'));
+check(strpos($info->sections['changelog'],'<script>')===false,'HTML in release notes escaped');
+reset_http(array(response('{}',404),response($r)));
+check(AMF_Static_Manifest::fetch()['version']==='2.3.7','fallback works after primary failure');
+check($GLOBALS['requests'][1][0]===AMF_Static_Manifest::FALLBACK,'fallback is release asset not REST');
+check(count(AMF_Updates::diagnostics()['attempts'])===2,'both transport attempts recorded');
+foreach(array(response('bad'),response(str_repeat('x',131073)),response('{}',404),response('{}',403),response('{}',500),new WP_Error()) as $fail){
+ reset_http(array($fail,$fail));check(AMF_Static_Manifest::fetch()===false,'fail closed for invalid/unavailable sources');
+ $count=count($GLOBALS['requests']);AMF_Static_Manifest::fetch();check(count($GLOBALS['requests'])===$count,'negative cache reused');
+ check($GLOBALS['ttls'][AMF_Static_Manifest::CACHE]===600,'ten-minute negative cache');
 }
-$r=release_fixture();
-$headers=array('UpdateURI'=>AMF_Updates::UPDATE_URI);
-$valid=AMF_Updates::validate_release($r);check($valid && $valid['version']==='2.3.6','canonical stable asset accepted');
-foreach(array('draft','prerelease') as $key){$bad=$r;$bad[$key]=true;check(false===AMF_Updates::validate_release($bad),'reject '.$key);}
-foreach(array(null,'string',array(),array('tag_name'=>array(),'assets'=>array())) as $bad){check(false===AMF_Updates::validate_release($bad),'malformed JSON structure rejected');}
-foreach(array('2.3.6','v2.3.6-beta','v2.3.6/path',array('invalid')) as $tag){$bad=$r;$bad['tag_name']=$tag;check(false===AMF_Updates::validate_release($bad),'unsafe/nonstable tag rejected');}
-foreach(array('http://github.com/x.zip','https://evil.invalid/a.zip','https://github.com/benoitfouc/audit-medias/archive/refs/tags/v2.3.6.zip','https://github.com/benoitfouc/audit-medias/releases/download/v2.3.6/audit-medias-v2.3.6.zip?x=1') as $url){$bad=$r;$bad['assets'][0]['browser_download_url']=$url;check(false===AMF_Updates::validate_release($bad),'noncanonical download rejected');}
-$GLOBALS['response']=array('code'=>200,'body'=>json_encode($r),'headers'=>array('x-ratelimit-remaining'=>'59'));
-check('untouched'===AMF_Updates::check_update('untouched',$headers,'other/other.php',array()),'other plugin untouched');
-check(0===$GLOBALS['http_count'],'no HTTP for unrelated plugin');
-$u=AMF_Updates::check_update(false,$headers,$GLOBALS['basename'],array());
-check('2.3.6'===$u['version'] && $u['package']===$r['assets'][0]['browser_download_url'],'valid newer proposal');
-check(!isset($u['autoupdate']),'no forced auto-update flag');
-check($GLOBALS['http_args']['limit_response_size']===524288 && !isset($GLOBALS['http_args']['sslverify']),'bounded request and TLS verification left enabled');
-AMF_Updates::check_update(false,$headers,$GLOBALS['basename'],array());check($GLOBALS['http_count']===1,'positive cache reused');
-check($GLOBALS['ttls'][AMF_Updates::CACHE_KEY]===21600,'positive cache TTL preserved');
-$d=AMF_Updates::diagnostics();check($d['http']===200 && $d['rate_limit']['remaining']===59 && $d['detected_version']==='2.3.6','diagnostic records HTTP and quota');
-check($d['checked_at']>0 && $d['cache_expires_at']>$d['checked_at'],'cache timestamps stored');
-$before=$GLOBALS['http_count'];AMF_Updates::diagnostics();ob_start();AMF_Updates::render_settings();$html=ob_get_clean();check($GLOBALS['http_count']===$before,'opening diagnostics makes no request');
-check(strpos($html,'Diagnostic')!==false && strpos($html,'name="_wpnonce"')!==false,'protected diagnostic UI rendered');
-$info=AMF_Updates::plugin_information(false,'plugin_information',(object)array('slug'=>'audit-medias'));check(strpos($info->sections['changelog'],'<script>')===false,'changelog escaped');
-foreach(array(array(429,'{}','rate_limited'),array(403,'{}','http_error'),array(404,'{}','no_release'),array(200,'<html>','invalid_json'),array(200,json_encode(array('tag_name'=>'v2.3.6','assets'=>array())),'missing_asset')) as $case){
- $GLOBALS['cache']=array();$GLOBALS['response']=array('code'=>$case[0],'body'=>$case[1]);
- check(false===AMF_Updates::check_update(false,$headers,$GLOBALS['basename'],array()),'no invented offer on '.$case[2]);
- check(AMF_Updates::diagnostics()['status']===$case[2],'diagnostic reason '.$case[2]);
- $count=$GLOBALS['http_count'];AMF_Updates::check_update(false,$headers,$GLOBALS['basename'],array());check($count===$GLOBALS['http_count'],'negative cache reused');
-}
-$GLOBALS['cache']=array();$GLOBALS['response']=new WP_Error();AMF_Updates::check_update(false,$headers,$GLOBALS['basename'],array());
-$d=AMF_Updates::diagnostics();check($d['status']==='network_error' && $d['error_code']==='http_request_failed','network error distinguished');
-check(strpos(json_encode($GLOBALS['options']),'secret')===false,'no raw error path or token recorded');
-$GLOBALS['cache']=array();$GLOBALS['response']=array('code'=>403,'body'=>'{}','headers'=>array('x-ratelimit-remaining'=>'0','x-ratelimit-reset'=>(string)(time()+120)));
-AMF_Updates::check_update(false,$headers,$GLOBALS['basename'],array());check(AMF_Updates::diagnostics()['status']==='rate_limited' && $GLOBALS['ttls'][AMF_Updates::CACHE_KEY]<=120,'GitHub shared-IP quota handled');
-$GLOBALS['cache']=array(AMF_Updates::CACHE_KEY=>array('state'=>'ok','release'=>$valid));$before=$GLOBALS['http_count'];
-check(AMF_Updates::diagnostics()['detected_version']==='2.3.6' && $before===$GLOBALS['http_count'],'legacy 2.3.3 cache still readable');
-$GLOBALS['allowed']=false;try{AMF_Updates::refresh_updates();throw new RuntimeException('FAIL permission');}catch(RuntimeException $e){check($e->getMessage()==='DENIED','permission verified before refresh');}
-$GLOBALS['allowed']=true;$GLOBALS['nonce_ok']=false;try{AMF_Updates::refresh_updates();throw new RuntimeException('FAIL nonce');}catch(RuntimeException $e){check($e->getMessage()==='NONCE','nonce verified before refresh');}
-$GLOBALS['nonce_ok']=true;$GLOBALS['response']=array('code'=>200,'body'=>json_encode($r));
-$other=(object)array('new_version'=>'9.9');$GLOBALS['cache']['update_plugins']=(object)array('last_checked'=>123,'response'=>array('other/other.php'=>$other),'translations'=>array('preserved'),'checked'=>array('other/other.php'=>'1.0'));
-try{AMF_Updates::refresh_updates();}catch(RuntimeException $e){check($e->getMessage()==='REDIRECT','refresh returns to diagnostics');}
-$w=$GLOBALS['cache']['update_plugins'];
-check($w->response['audit-medias/audit-medias.php']->new_version==='2.3.6','manual refresh publishes offer despite simulated WP.org failure');
-check($w->response['other/other.php']===$other && $w->translations===array('preserved'),'other plugins and translations preserved');
-check($w->last_checked===0,'does not pretend global WordPress check succeeded');
-check($GLOBALS['core_checks']===1,'native WordPress metadata check attempted');
-$GLOBALS['response']=array('code'=>200,'body'=>json_encode(release_fixture('2.3.5')));
-try{AMF_Updates::refresh_updates();}catch(RuntimeException $e){}
-$w=$GLOBALS['cache']['update_plugins'];check(!isset($w->response[$GLOBALS['basename']]) && isset($w->no_update[$GLOBALS['basename']]),'same version is not offered');
-$GLOBALS['basename']='audit-medias-2.3.5/audit-medias.php';check(false===AMF_Updates::check_update(false,$headers,$GLOBALS['basename'],array()),'duplicate folder does not get update');
-check(!AMF_Updates::diagnostics()['canonical_path'],'incorrect folder visible in diagnostic');
-$GLOBALS['basename']='audit-medias/audit-medias.php';
-$GLOBALS['options'][AMF_Updates::DIAGNOSTIC_KEY]=array('status'=>'network_error','error_code'=>'<script>bad</script>');
-ob_start();AMF_Updates::render_settings();$html=ob_get_clean();check(strpos($html,'<script>')===false,'diagnostic values escaped');
-echo 'UPDATER: '.$GLOBALS['passes'].' checks passed'.PHP_EOL;
+check(strpos(json_encode($GLOBALS['options']),'secret')===false,'no sensitive error messages stored');
+reset_http(array(response('{}',429,array('retry-after'=>'7200')),response('{}',429,array('retry-after'=>'7200'))));AMF_Static_Manifest::fetch();check($GLOBALS['ttls'][AMF_Static_Manifest::CACHE]===7200,'Retry-After honored');
+reset_http(array(response($r)));$GLOBALS['cache']['amf_github_release_v1']=array('state'=>'unavailable');check(AMF_Static_Manifest::fetch()['version']==='2.3.7','old exhausted API cache ignored');
+reset_http(array(response($r)));$GLOBALS['cache'][AMF_Static_Manifest::CACHE]=array('state'=>'ok','release'=>$r,'expires_at'=>time()-1);AMF_Static_Manifest::fetch();check(count($GLOBALS['requests'])===1,'expired cache not trusted');
+reset_http(array(response($r)));$bad=$r;$bad['package']='https://evil.test/a.zip';$GLOBALS['cache'][AMF_Static_Manifest::CACHE]=array('state'=>'ok','release'=>$bad,'expires_at'=>time()+100);check(AMF_Static_Manifest::fetch()['package']===$r['package'],'cached metadata revalidated');
+reset_http(array());$GLOBALS['cache'][AMF_Static_Manifest::LOCK]=1;check(!AMF_Static_Manifest::fetch() && !$GLOBALS['requests'],'short request lock avoids parallel polling');
+reset_http(array(response($r)));
+$other=(object)array('new_version'=>'10');$GLOBALS['cache']['update_plugins']=(object)array('last_checked'=>123,'response'=>array('other/other.php'=>$other),'translations'=>array('keep'),'checked'=>array('other/other.php'=>'1'));
+AMF_Static_Manifest::sync_wordpress($r,'2.3.3');$w=$GLOBALS['cache']['update_plugins'];
+check($w->response[AMF_Static_Manifest::FILE]->new_version==='2.3.7','transition merges authenticated-by-TLS metadata for 2.3.3');
+check($w->response['other/other.php']===$other && $w->translations===array('keep') && $w->last_checked===123,'other offers and global timestamp preserved');
+AMF_Static_Manifest::sync_wordpress($r,'2.3.7');check(!isset($w->response[AMF_Static_Manifest::FILE]) && isset($w->no_update[AMF_Static_Manifest::FILE]),'same version not offered');
+AMF_Static_Manifest::sync_wordpress($r,'2.3.8');check(!isset($w->response[AMF_Static_Manifest::FILE]),'no downgrade');
+$GLOBALS['allowed']=false;expect(function(){AMF_Updates::refresh_updates();},'DENIED','refresh capability required');
+$GLOBALS['allowed']=true;$GLOBALS['nonce_ok']=false;expect(function(){AMF_Updates::refresh_updates();},'NONCE','refresh nonce required');
+$GLOBALS['nonce_ok']=true;$GLOBALS['responses']=array(response($r));expect(function(){AMF_Updates::refresh_updates();},'REDIRECT','manual check returns safely');
+check($GLOBALS['cache']['update_plugins']->response[AMF_Static_Manifest::FILE]->new_version==='2.3.7','manual check works when WP.org returns early');
+check($GLOBALS['cache']['update_plugins']->response['other/other.php']===$other,'refresh preserves unrelated updates');
+$GLOBALS['base']='audit-medias-2.3.6/audit-medias.php';check(false===AMF_Updates::check_update(false,$h,$GLOBALS['base'],array()),'duplicate path blocked');$GLOBALS['base']=AMF_Static_Manifest::FILE;
+$tmp=tempnam(sys_get_temp_dir(),'amf-test-');file_put_contents($tmp,'zip fixture');
+check(AMF_Static_Manifest::verify_package($tmp,$r),'correct checksum and size accepted');
+$GLOBALS['download_file']=$tmp;
+$reply=AMF_Static_Manifest::pre_download(false,$r['package'],null,array('plugin'=>AMF_Static_Manifest::FILE));check($reply===$tmp && $GLOBALS['downloads']===1,'native package intercepted and verified');
+check(AMF_Static_Manifest::pre_download(false,'https://example.test/other.zip',null)===false,'other package not intercepted');
+$err=new WP_Error('other');check(AMF_Static_Manifest::pre_download($err,$r['package'],null)===$err,'previous error preserved');
+file_put_contents($tmp,'ZIP fixture');check(!AMF_Static_Manifest::verify_package($tmp,$r),'same-size tampering rejected');
+$x=AMF_Static_Manifest::pre_download(false,$r['package'],null);check(is_wp_error($x) && $x->get_error_code()==='amf_checksum_mismatch' && !file_exists($tmp),'bad temporary download removed before extraction');
+check(AMF_Static_Manifest::pre_download(false,$r['package'],null,array('plugin'=>'other/other.php'))===false,'explicit other plugin not touched');
+foreach($GLOBALS['requests'] as $request)check(strpos($request[0],'api.github.com')===false,'no REST API HTTP call');
+echo 'UPDATER: '.$GLOBALS['passes'].' assertions passed'.PHP_EOL;

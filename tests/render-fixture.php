@@ -73,7 +73,9 @@ class Fixture_View extends AMF_Usage_View {
 }
 $db=new AMF_Database();$scanner=new AMF_Scanner();$actions=new AMF_Actions();$products=new AMF_Product_Usage();
 $admin=new AMF_Admin($db,$scanner,$actions,$products);
-$prop=new ReflectionProperty(AMF_Admin::class,'usage_view');$prop->setAccessible(true);$prop->setValue($admin,new Fixture_View($db,$products));
+$prop=new ReflectionProperty(AMF_Admin::class,'usage_view');
+if (PHP_VERSION_ID < 80100) { $prop->setAccessible(true); }
+$prop->setValue($admin,new Fixture_View($db,$products));
 ob_start();$admin->render_page();$html=ob_get_clean();
 $status=array('exists'=>(bool)$GLOBALS['scan'],'id'=>7,'status'=>isset($_GET['running'])?'running':'complete','phase'=>'files','phase_total'=>100,'phase_current'=>100);
 $data=array('ajaxUrl'=>'/fixture-ajax','nonce'=>'fixture-nonce','status'=>$status,'performance'=>array(),'presets'=>array(),'productIndex'=>$products->status(),'deletionEnabled'=>$actions->deletion_enabled(),'i18n'=>array('error'=>'Fixture error','confirmRestart'=>'Restart?','confirmDeleteFamily'=>'Delete?'));
