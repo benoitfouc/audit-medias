@@ -57,6 +57,7 @@ class AMF_Admin {
 		wp_enqueue_style( 'amf-admin', AMF_PLUGIN_URL . 'assets/admin.css', array(), AMF_VERSION );
 		wp_enqueue_style( 'amf-admin-tables', AMF_PLUGIN_URL . 'assets/admin-tables.css', array( 'amf-admin' ), AMF_VERSION );
 		wp_enqueue_style( 'amf-client', AMF_PLUGIN_URL . 'assets/admin-client.css', array( 'amf-admin-tables' ), AMF_VERSION );
+		wp_enqueue_style( 'amf-brand', AMF_PLUGIN_URL . 'assets/admin-brand.css', array( 'amf-client' ), AMF_VERSION );
 		wp_enqueue_script( 'amf-admin', AMF_PLUGIN_URL . 'assets/admin.js', array( 'jquery' ), AMF_VERSION, true );
 		wp_localize_script(
 			'amf-admin',
@@ -92,7 +93,7 @@ class AMF_Admin {
 		?>
 		<div class="wrap amf-wrap">
             <header class="amf-client-header">
-                <div><h1>Audit Médias <span class="amf-version">v<?php echo esc_html(AMF_VERSION); ?></span></h1><span class="amf-byline">par Benfou</span></div>
+                <div class="amf-brand-heading"><a class="amf-brand-logo" href="https://www.benfou.fr/" target="_blank" rel="noopener noreferrer" aria-label="Benfou - ouvrir le site dans un nouvel onglet"><img src="<?php echo esc_url(AMF_PLUGIN_URL . 'assets/brand/benfou-logo.svg'); ?>" width="132" height="34" alt="Benfou"></a><span class="amf-brand-divider" aria-hidden="true"></span><div><h1>Audit Médias <span class="amf-version">v<?php echo esc_html(AMF_VERSION); ?></span></h1><span class="amf-byline">Voir clair dans vos images.</span></div></div>
                 <span class="amf-status-chip <?php echo $this->actions->deletion_enabled() ? 'amf-status-danger' : 'amf-status-safe'; ?>">Suppressions <?php echo $this->actions->deletion_enabled() ? 'activées' : 'désactivées'; ?></span>
             </header>
             <?php if ( $scan && ! AMF_Reference_Parser::scan_is_current( $scan ) ) : ?>
@@ -356,13 +357,7 @@ class AMF_Admin {
             </details>
             <p><button type="button" class="button button-primary" id="amf-save-performance">Enregistrer la cadence</button> <span id="amf-settings-message" role="status"></span></p>
         </section>
-        <section class="amf-info-box">
-            <h3>Mises à jour</h3>
-            <p>Version installée : <strong><?php echo esc_html(AMF_VERSION); ?></strong>. Les nouvelles versions sont proposées dans WordPress.</p>
-            <?php if (current_user_can('update_plugins')) : ?>
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"><input type="hidden" name="action" value="amf_check_updates"><?php wp_nonce_field('amf_check_updates'); ?><button type="submit" class="button">Rechercher une mise à jour</button></form>
-            <?php endif; ?>
-        </section>
+        <?php AMF_Updates::render_settings(); ?>
         <?php $this->render_technical_settings(); ?>
         <p class="description">Développé par <a href="https://www.benfou.fr/" target="_blank" rel="noopener noreferrer">Benfou</a> · <a href="https://github.com/benoitfouc/audit-medias" target="_blank" rel="noopener noreferrer">Documentation</a></p>
         <?php

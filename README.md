@@ -8,7 +8,7 @@
 
 ![WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B?logo=wordpress&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4?logo=php&logoColor=white)
-![Version](https://img.shields.io/badge/version-2.3.4-4d7c00)
+![Version](https://img.shields.io/badge/version-2.3.5-C0FA39)
 
 Développé et maintenu par **[Benfou](https://www.benfou.fr/)**
 
@@ -63,13 +63,19 @@ Si l'asset n'apparaît pas, vérifier [GitHub Actions](../../actions) et le tag,
 
 **Prérequis déclarés :** WordPress 6.2 et PHP 7.4 minimum. WooCommerce et les constructeurs de pages sont facultatifs.
 
+## Identité Benfou
+
+Logo original fourni par Benfou, interface claire noir/blanc et accent `#C0FA39`. Les alertes et suppressions gardent leurs couleurs de sécurité. Aucun chargement de police distante : Montserrat lorsqu’elle est disponible localement, sinon police système. [Détails](docs/BRANDING.md).
+
 ## Mises à jour
 
 La **2.3.3** a introduit la détection des releases publiques via le mécanisme natif WordPress `Update URI`, sans jeton GitHub sur les sites. Elle doit être installée une première fois pour recevoir les propositions suivantes.
 
-À partir de la **2.3.4**, **Réglages > Rechercher une mise à jour** renouvelle les métadonnées et ouvre l'écran de mises à jour WordPress. Cette action **n'installe rien** et ne change pas les préférences de mises à jour automatiques du site.
+À partir de la **2.3.4**, **Réglages > Rechercher une mise à jour** renouvelle les métadonnées de mise à jour. Cette action **n'installe rien** et ne change pas les préférences de mises à jour automatiques du site.
 
-[Historique](CHANGELOG.md) · [Procédure de publication](docs/PUBLICATION.md) · [Validation 2.3.4](docs/VALIDATION-2.3.4.md)
+La **2.3.5** affiche un diagnostic dans les réglages : version locale, cache, réponse HTTP, quota GitHub et proposition enregistrée par WordPress. La vérification manuelle interroge aussi GitHub si le contrôle WordPress.org échoue auparavant. Cela ne prouve pas la cause d’un blocage sur un site donné.
+
+[Historique](CHANGELOG.md) · [Procédure de publication](docs/PUBLICATION.md) · [Validation 2.3.5](docs/VALIDATION-2.3.5.md)
 
 ## Suppression et sécurité
 
