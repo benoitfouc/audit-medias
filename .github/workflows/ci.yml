@@ -29,3 +29,12 @@ jobs:
           find . -path './.git' -prune -o -type f -name '*.php' -print0 | xargs -0 -r -n 1 php -l
       - name: Vérifier JavaScript
         run: node --check assets/admin.js
+      - name: Tester le client de mise à jour (HTTP simulé)
+        run: php tests/updater-test.php
+      - name: Tester les écrans (WordPress simulé)
+        run: |
+          set -euo pipefail
+          for args in 'tab=files' 'tab=dashboard' 'tab=settings' 'tab=woo' 'tab=errors' 'tab=media' 'tab=files&no_woo=1' 'tab=files&readonly=1' 'tab=files&empty=1' 'tab=files&stale=1' 'tab=files&old_scan=1' 'tab=dashboard&running=1' 'tab=dashboard&no_scan=1' 'tab=settings&no_scan=1' 'tab=files&assoc=unassociated&other_usage=none' 'tab=files&xss=1'; do
+            php tests/render-fixture.php "$args" > /dev/null
+            printf 'PASS %s\n' "$args"
+          done
