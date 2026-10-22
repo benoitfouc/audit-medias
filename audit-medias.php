@@ -2,10 +2,11 @@
 /**
  * Plugin Name: Audit Médias
  * Description: Audit, regroupement et suppression contrôlée des médias WordPress, WooCommerce et des fichiers physiques de wp-content/uploads.
- * Version: 2.3.2
+ * Version: 2.3.3
  * Author: Benfou
  * Author URI: https://www.benfou.fr/
- * Plugin URI: https://www.benfou.fr/
+ * Plugin URI: https://github.com/benoitfouc/audit-medias
+ * Update URI: https://github.com/benoitfouc/audit-medias
  * Requires at least: 6.2
  * Requires PHP: 7.4
  * Text Domain: audit-medias
@@ -15,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'AMF_VERSION', '2.3.2' );
+define( 'AMF_VERSION', '2.3.3' );
 define( 'AMF_PAGE_SLUG', 'audit-medias' );
 define( 'AMF_PLUGIN_FILE', __FILE__ );
 define( 'AMF_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -32,6 +33,7 @@ require_once AMF_PLUGIN_DIR . 'includes/class-amf-actions.php';
 require_once AMF_PLUGIN_DIR . 'includes/class-amf-product-usage.php';
 require_once AMF_PLUGIN_DIR . 'includes/class-amf-usage-view.php';
 require_once AMF_PLUGIN_DIR . 'includes/class-amf-admin.php';
+require_once AMF_PLUGIN_DIR . 'includes/class-amf-updates.php';
 
 function amf_activate_plugin() {
 	$db = new AMF_Database();
@@ -52,3 +54,4 @@ function amf_boot_plugin() {
 	}
 }
 add_action( 'plugins_loaded', 'amf_boot_plugin', 20 );
+AMF_Updates::register();
