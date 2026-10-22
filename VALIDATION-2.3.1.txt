@@ -1,0 +1,20 @@
+Audit Medias 2.3.1 - verifications locales du correctif references par famille
+==============================================================================
+- Syntaxe PHP : tous les fichiers valides (php -l avec PHP 8.4).
+- JS : analyse syntaxique (node --check); fichier inchange par rapport a 2.3.0.
+- Tests simules du constructeur SQL/filtre (PHP avec WPDB simule) :
+  1. famille avec image WooCommerce absente et URLs physiques > 0 exclue du filtre "sans autre reference";
+  2. source originale, thumbnails et conversions comptes dans SUM(f.direct_usage_count);
+  3. filtres review, no_usage et found coherents pour les refs URL;
+  4. onglet Medias : sous-requete agregant les hits des fichiers rattaches;
+  5. tri par references utilise aussi les hits directs;
+  6. quand les references URL comptent 76, l'UX n'affiche plus "aucune autre reference";
+  7. filtres d'absence fermes si verification WooCommerce incomplete.
+- Aucun changement des methodes AJAX de scan ou suppression : source class-amf-actions.php intacte.
+- Aucun changement des tables ou des valeurs AMF stockees. Plugin/slug conserves.
+
+Limites : pas de test contre la DB reelle ni les plugins propres aux sites clients.
+Les URL referencees dans d'autres plugins, CSS, CDN ou stockage externe peuvent
+ne pas avoir ete trouvees par le dernier audit. Les annotations URL proviennent
+du dernier scan et peuvent correspondre a des contenus historiques. Ne pas
+interpreter "sans reference detectee" comme une garantie de suppression sure.

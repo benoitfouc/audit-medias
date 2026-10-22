@@ -1,0 +1,40 @@
+name: Publier un ZIP WordPress
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperer le code prive
+        uses: actions/checkout@v4
+      - name: Verifier PHP et JavaScript
+        run: |
+          find . -path './.git' -prune -o -name '*.php' -type f -exec php -l {} \;
+          node --check assets/admin.js
+      - name: Verifier la correspondance du tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          php -r '$text=file_get_contents("audit-medias.php"); if(!preg_match("/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]*([0-9.]+)/m",$text,$m)){fwrite(STDERR,"Version absente\n");exit(1);} if("v".$m[1]!==getenv("RELEASE_TAG")){fwrite(STDERR,"Tag et version du plugin differents\n");exit(1);} echo "Version valide: ".$m[1]."\n";'
+      - name: Construire le ZIP WordPress
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          mkdir -p dist/audit-medias
+          cp audit-medias.php README.txt dist/audit-medias/
+          cp -R assets includes dist/audit-medias/
+          cd dist
+          zip -qr "audit-medias-${RELEASE_TAG}.zip" audit-medias
+          unzip -t "audit-medias-${RELEASE_TAG}.zip"
+      - name: Joindre le ZIP a la release privee
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$RELEASE_TAG" "dist/audit-medias-${RELEASE_TAG}.zip" --clobber

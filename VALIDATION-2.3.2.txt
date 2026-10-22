@@ -1,0 +1,38 @@
+Audit Médias 2.3.2 - validation locale
+=====================================
+Base : archive audit-medias-v2.3.1.zip fournie dans la conversation.
+Version / constante AMF_VERSION : 2.3.2. Slug : audit-medias. Auteur : Benfou.
+
+Contrôles exécutés :
+- 12 fichiers PHP : php -l, aucune erreur de syntaxe sous PHP 8.4.24.
+- assets/admin.js : node --check, aucune erreur de syntaxe.
+- 86 assertions du parseur : toutes réussies.
+  Extrait WPBakery fourni : 18 IDs d'images distincts détectés.
+  Attributs de fonds, images animées, couverture vidéo, galeries, shortcodes
+  imbriqués/autofermants, faux IDs numériques, CSS, Jetpack i0-i3,
+  proxies, URL encodées/échappées, chemins personnalisés/multisites,
+  doubles extensions, noms avec espaces encodés et traversées de chemin.
+- 40 assertions d'intégration simulée : toutes réussies.
+  Appels réels aux classes du plugin avec fonctions WordPress / base simulées :
+  lots de contenus et métas, preuves ID/URL, JSON/serialization, liens publics,
+  rôles affichés, signalement d'un ID absent, garde des anciens audits,
+  blocage des suppressions sur ancien audit (y compris confirmation forcée).
+- 10 assertions SQL : toutes réussies.
+  Requête de filtrage réellement produite par le plugin exécutée sous SQLite,
+  fonctions MD5/CONCAT/GREATEST adaptées pour le harnais : un ID de fond, une
+  URL sur l'original ou une miniature, ou une association CDN probable excluent
+  toute la famille. Les anciens audits et scans en cours ne produisent pas de
+  résultat d'absence. Les familles sans preuve restent identifiables.
+- Total : 136 assertions réussies, 0 échec.
+- Intégrité ZIP et chemin du fichier principal contrôlés.
+
+Limites des tests :
+Ce n'est pas une installation réelle WordPress/WooCommerce ni une base MySQL/
+MariaDB du client. Les fonctions d'environnement sont simulées, notamment
+l'analyse des attributs de shortcode selon l'algorithme officiel WordPress.
+Aucun fichier du site client n'a été modifié ou supprimé pendant ces tests.
+La compatibilité d'exécution avec PHP 7.4 n'a pas été testée localement.
+La détection d'une référence prouve sa présence dans les données analysées,
+non son affichage effectif ou visible à chaque visite.
+
+Une analyse complète avec la version 2.3.2 est requise après la mise à jour.

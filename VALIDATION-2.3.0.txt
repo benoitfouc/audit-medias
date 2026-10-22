@@ -1,0 +1,83 @@
+Audit Medias 2.3.0 - validation locale
+=====================================
+
+Tests PHP executes avec APIs WordPress/WooCommerce simulees et SQLite adapte, pas avec un site WordPress complet/MariaDB.
+
+PASS: No negative result before first complete verification
+PASS: Batches bounded to 250 metadata rows
+PASS: Resumption after a new request preserves cursor and publishes completed generation
+PASS: Main product image detected
+PASS: Shared image in gallery and another product remains used
+PASS: Own variation image detected
+PASS: Trashed products and their variations are excluded from current assignments
+PASS: Replaced image absent; replacement present
+PASS: Draft images protected with explicit status
+PASS: Duplicate obsolete thumbnail meta is not treated as active
+PASS: Deletion-time reference check reads current native fields
+PASS: Family SQL joins do not inflate file counts or rows
+PASS: Historical parent and obsolete product assignment excluded from other references
+PASS: Product description classified separately from gallery
+PASS: Direct URL on an orphan derivative resolves to the entire family
+PASS: Search on one derivative keeps complete family counts
+PASS: Absence filter crosses current product roles and all other references
+PASS: Source lists match the summary counts
+PASS: Variation link opens the parent with variation attributes
+PASS: Historical origin remains available via a front link
+PASS: Product edit invalidates previously completed negative findings
+PASS: Negative filters return no conclusions while verification is stale
+PASS: Old image loses its product role after independent refresh
+PASS: SQL error produces explicit incomplete status
+PASS: Failed refresh preserves the last good generation
+PASS: Failed refresh can resume successfully
+PASS: Nonstandard native gallery blocks negative findings
+PASS: Misleading green attachment badge removed from main list
+PASS: Top result counter and page size selector retained
+PASS: Main table uses the two explicit usage columns
+PASS: Technical files start collapsed and are not rendered before disclosure
+PASS: A direct URL on a guessed derivative is not a confirmed media association
+PASS: WooCommerce inactive: no fatal error and previous references retained as other evidence
+PASS: Changes during verification restart staging without publishing partial results
+PASS: A product-reference read error never becomes an absent verdict
+PASS: An other-reference read error remains explicitly unknown
+TOTAL: 36 successful checks
+
+[
+  [
+    "main_rows",
+    12
+  ],
+  [
+    "details_start_with_usages",
+    true
+  ],
+  [
+    "technical_files_lazy_load",
+    true
+  ],
+  [
+    "variation_link_new_tab",
+    true
+  ],
+  [
+    "invalid_nonce_rejected",
+    true
+  ],
+  [
+    "missing_capability_rejected",
+    true
+  ],
+  [
+    "refresh_job_completed_requests_reload",
+    true
+  ],
+  [
+    "javascript_errors",
+    []
+  ]
+]
+
+PASS: 108 physical files, pages of 100 and 8, no overlap, complete family retained.
+
+PHP 8.4.24 : 11 fichiers valides par php -l.
+JavaScript : syntaxe valide via Node 22.16.0.
+Aucun test sur la base et les fichiers du site client.
