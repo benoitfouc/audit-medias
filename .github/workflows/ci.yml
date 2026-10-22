@@ -12,9 +12,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['7.4', '8.2', '8.4']
+        php: ['7.4', '8.2', '8.4', '8.5']
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
@@ -23,8 +25,12 @@ jobs:
         run: |
           find . -path './.git' -prune -o -type f -name '*.php' -print0 | xargs -0 -r -n 1 php -l
           node --check assets/admin.js
-      - name: Update client regression tests (simulated HTTP)
-        run: php tests/updater-test.php
+      - name: Static client, checksums and transition (simulated WordPress)
+        run: |
+          set -euo pipefail
+          php tests/updater-test.php
+          for v in 2.3.3 2.3.5 2.3.6 2.3.7; do php tests/transition-test.php "$v"; done
+          php tests/transition-test.php 2.3.3 audit-medias-2.3.3/audit-medias.php
       - name: Interface fixtures (simulated WordPress)
         run: |
           set -euo pipefail
@@ -32,5 +38,8 @@ jobs:
             php tests/render-fixture.php "$args" > /dev/null
             printf 'PASS %s\n' "$args"
           done
-      - name: Build and verify the installable package
-        run: python3 tools/build-package.py
+      - name: Reproducible packages and manifest
+        run: |
+          set -euo pipefail
+          python3 tools/build-manifest.py --tag "v$(php -r '$s=file_get_contents("audit-medias.php"); preg_match("/Version: ([0-9.]+)/",$s,$m); echo $m[1];')"
+          python3 tests/package-test.py
