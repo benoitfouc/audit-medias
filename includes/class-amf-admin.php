@@ -55,6 +55,7 @@ class AMF_Admin {
 			return;
 		}
 		wp_enqueue_style( 'amf-admin', AMF_PLUGIN_URL . 'assets/admin.css', array(), AMF_VERSION );
+		wp_enqueue_style( 'amf-admin-tables', AMF_PLUGIN_URL . 'assets/admin-tables.css', array( 'amf-admin' ), AMF_VERSION );
 		wp_enqueue_script( 'amf-admin', AMF_PLUGIN_URL . 'assets/admin.js', array( 'jquery' ), AMF_VERSION, true );
 		wp_localize_script(
 			'amf-admin',
