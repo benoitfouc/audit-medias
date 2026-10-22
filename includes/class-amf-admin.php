@@ -89,7 +89,15 @@ class AMF_Admin {
 		$scan = $this->db->get_latest_scan();
 		?>
 		<div class="wrap amf-wrap">
-			<h1>Audit Médias</h1>
+			<header class="amf-hero"><div class="amf-hero-main">
+                <span class="amf-eyebrow">BENFOU · MAINTENANCE WORDPRESS</span>
+                <h1>Audit Médias <small class="amf-version">v<?php echo esc_html( AMF_VERSION ); ?></small></h1>
+                <p>Identifiez les images utilisées, explorez les familles de fichiers et préparez un nettoyage contrôlé.</p>
+            </div><div class="amf-hero-actions"><a class="button" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=dashboard')); ?>">Vue d’ensemble</a><a class="button" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=settings')); ?>">Réglages</a><a class="button" href="https://github.com/benoitfouc/audit-medias" target="_blank" rel="noopener noreferrer">Documentation ↗</a></div></header>
+            <div class="amf-status-line" role="status">
+            <span class="amf-status-chip <?php echo $scan && 'complete'===$scan['status'] && AMF_Reference_Parser::scan_is_current($scan) ? 'amf-status-ready':'amf-status-waiting'; ?>"><?php echo esc_html(!$scan?'Aucun audit':(!AMF_Reference_Parser::scan_is_current($scan)?'Nouvel audit requis':('complete'===$scan['status']?'Audit terminé':'Audit à reprendre'))); ?></span>
+            <span class="amf-status-chip <?php echo $this->actions->deletion_enabled()?'amf-status-danger':'amf-status-safe'; ?>">Suppressions <?php echo $this->actions->deletion_enabled()?'activées':'désactivées'; ?></span>
+            <span class="amf-status-note">Aucun fichier n’est supprimé automatiquement.</span></div>
 			<div class="notice notice-info inline amf-readonly-notice"><p><strong>Analyse non destructive par défaut :</strong> aucun fichier n’est supprimé automatiquement. Les suppressions sont toujours manuelles, protégées et désactivées par défaut dans les réglages.</p></div>
             <?php if ( $scan && ! AMF_Reference_Parser::scan_is_current( $scan ) ) : ?>
             <div class="notice notice-warning inline amf-parser-update"><p><strong>Nouvelle détection des arrière-plans et des URL CDN.</strong>
@@ -108,7 +116,7 @@ class AMF_Admin {
 				);
 				foreach ( $tabs as $key => $label ) {
 					$url = admin_url( 'tools.php?page=audit-medias&tab=' . $key );
-					echo '<a class="nav-tab ' . ( $tab === $key ? 'nav-tab-active' : '' ) . '" href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a>';
+					echo '<a class="nav-tab ' . ( $tab === $key ? 'nav-tab-active' : '' ) . '" href="' . esc_url( $url ) . '"' . ($tab === $key ? ' aria-current="page"':'') . '>' . esc_html( $label ) . '</a>';
 				}
 				?>
 			</nav>
@@ -295,13 +303,13 @@ class AMF_Admin {
 		$stats = $scan_id ? $this->dashboard_stats( $scan_id ) : array();
 		?>
 		<section class="amf-scan-panel">
-			<h2>Analyse</h2>
+			<div class="amf-panel-heading"><h2>Analyse des médias</h2><span class="amf-scan-live" id="amf-scan-state" aria-live="polite"><?php echo esc_html($scan && "complete"===$scan["status"]?"Terminée":"À démarrer / reprendre"); ?></span></div>
 			<div id="amf-progress" class="amf-progress" data-scan-id="<?php echo esc_attr( $scan_id ); ?>">
 				<div class="amf-progress-head">
 					<strong id="amf-phase-label"><?php echo esc_html( $scan ? AMF_Utils::status_label( $scan['phase'] ) : 'Aucune analyse' ); ?></strong>
 					<span id="amf-progress-numbers"></span>
 				</div>
-				<div class="amf-progress-track"><div id="amf-progress-bar" class="amf-progress-bar"></div></div>
+				<div class="amf-progress-track" id="amf-progress-track" role="progressbar" aria-label="Progression du lot" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="amf-progress-bar" class="amf-progress-bar"></div></div>
 				<p id="amf-progress-message" class="description"><?php echo $scan ? esc_html( $scan['message'] ) : 'L’analyse fonctionne par petits lots et peut être reprise après fermeture de cette page.'; ?></p>
 				<p id="amf-live-performance" class="description amf-live-performance"></p>
 			</div>
@@ -315,7 +323,12 @@ class AMF_Admin {
 			<p class="description">Vous pouvez fermer l’onglet à tout moment. La progression est enregistrée en base et le bouton <strong>Reprendre</strong> continuera au dernier lot validé.</p>
 		</section>
 
-		<p class="description amf-dashboard-settings-link">La cadence du scan peut être ajustée dans l’onglet <a href="<?php echo esc_url( admin_url( 'tools.php?page=audit-medias&tab=settings' ) ); ?>"><strong>Réglages</strong></a>, y compris pendant une analyse.</p>
+		<section class="amf-workflow" aria-label="Parcours de l’audit">
+        <div class="amf-workflow-step"><b>1</b><div><strong>Analyser</strong><span>Lancez le scan et attendez la fin des vérifications.</span></div></div>
+        <div class="amf-workflow-step"><b>2</b><div><strong>Contrôler</strong><span>Inspectez les familles et leurs utilisations réelles.</span></div></div>
+        <div class="amf-workflow-step"><b>3</b><div><strong>Décider</strong><span>Sauvegardez avant de supprimer des médias.</span></div></div>
+        </section>
+        <p class="description amf-dashboard-settings-link">La cadence du scan peut être ajustée dans l’onglet <a href="<?php echo esc_url( admin_url( 'tools.php?page=audit-medias&tab=settings' ) ); ?>"><strong>Réglages</strong></a>, y compris pendant une analyse.</p>
 
 		<?php if ( $scan_id ) : ?>
 			<?php
@@ -488,7 +501,7 @@ class AMF_Admin {
             <?php if (!$this->actions->deletion_enabled()) : ?><span class="description">Suppression désactivée dans les réglages.</span><?php endif; ?>
         </div>
         <?php endif; ?>
-        <div class="amf-table-wrap"><table class="widefat striped amf-table amf-usage-table <?php echo $is_files?'amf-family-table':''; ?>"><thead><tr>
+        <div class="amf-table-tip">Dépliez les familles pour vérifier les fichiers et leurs références. <strong>Sans référence détectée ne signifie pas supprimable sans risque.</strong></div><div class="amf-table-wrap" tabindex="0" role="region" aria-label="Tableau des médias avec défilement horizontal"><table class="widefat striped amf-table amf-usage-table <?php echo $is_files?'amf-family-table':''; ?>"><thead><tr>
             <?php if ($is_files) : ?><th class="check-column amf-col-checkbox"><input type="checkbox" class="amf-family-select-all" aria-label="Sélectionner les familles de cette page" <?php disabled(!$this->actions->deletion_enabled()); ?>></th><th class="amf-col-toggle"><span class="screen-reader-text">Détails</span></th><?php endif; ?>
             <?php echo $this->files_sort_header('Média','media',$filters['orderby'],$filters['order'],'asc','amf-col-media'); ?>
             <?php echo $this->files_sort_header('Images produits','wc',$filters['orderby'],$filters['order'],'desc','amf-col-usage'); ?>
@@ -755,8 +768,8 @@ class AMF_Admin {
 			foreach ( $options as $value => $label ) echo '<option value="' . esc_attr( $value ) . '" ' . selected( $current, $value, false ) . '>' . esc_html( $label ) . '</option>';
 			echo '</select>';
 		}
-		if ( false !== $search ) echo '<input type="search" name="s" value="' . esc_attr( $search ) . '" placeholder="Nom, fichier ou ID">';
-		echo '<button class="button">Filtrer</button><span class="amf-filter-count">' . esc_html( number_format_i18n( $total ) ) . ' résultat(s)</span></form>';
+		if ( false !== $search ) echo '<label class="screen-reader-text" for="amf-search">Rechercher</label><input id="amf-search" type="search" name="s" value="' . esc_attr( $search ) . '" placeholder="Nom, fichier ou identifiant">';
+		echo '<button class="button button-primary">Filtrer</button> <a class="button amf-reset-filters" href="' . esc_url(admin_url('tools.php?page=audit-medias&tab='.$tab.'&per_page='.$per_page)) . '">Effacer les filtres</a><span class="amf-filter-count">' . esc_html( number_format_i18n( $total ) ) . ' résultat(s)</span></form>';
 	}
 
 	private function pagination( $total, $per_page, $paged ) {
