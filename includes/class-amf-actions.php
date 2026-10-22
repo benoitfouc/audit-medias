@@ -71,6 +71,9 @@ class AMF_Actions {
             return new WP_Error('amf_delete_live_product_usage','Cette image est actuellement affectée à un produit. Contrôlez ses utilisations dans Fichiers physiques avant toute suppression forcée.');
         }
 
+        // An attachment can have no direct ID usage while one of its thumbnails
+        // or AVIF/WebP derivatives is still referenced by URL. Check the *whole*
+        // family and the files that WordPress itself would remove.
         $safety = $this->verify_attachment_family_for_deletion( $scan_id, $attachment_id, $row );
         if ( is_wp_error( $safety ) ) { return $safety; }
 
@@ -259,6 +262,8 @@ class AMF_Actions {
 			'file_paths' => array_keys( $paths ),
 		);
 
+		// WordPress can remove additional backups or source companions. Ensure
+		// every currently present generated file belonged to the audited family.
 		if ( $attachment_id ) {
 			$scope = $this->verify_wordpress_generated_paths( $attachment_id, $current_rel, $paths );
 			if ( is_wp_error( $scope ) ) { return $scope; }
@@ -412,66 +417,85 @@ class AMF_Actions {
 		);
 	}
 
-    /** Conservatively protect every derivative, including saved WordPress backups. */
-    private function verify_attachment_family_for_deletion( $scan_id, $attachment_id, $media_row ) {
-        $key = AMF_Utils::family_key_for_attachment($attachment_id);
-        $table = $this->db->table('files');
-        $rows = $this->wpdb->get_results($this->wpdb->prepare(
-            "SELECT * FROM {$table} WHERE scan_id=%d AND (family_key=%s OR attachment_id=%d) AND physical=1",
-            $scan_id, $key, $attachment_id
-        ), ARRAY_A);
-        if (!$rows) return new WP_Error('amf_delete_family_not_scanned','La famille physique n’a pas été analysée. Relancez un audit.');
-        $paths = array();
-        foreach ($rows as $file) {
-            if (absint($file['direct_usage_count']) > 0 || 'unassociated_ambiguous' === $file['classification'] ||
-                (absint($file['attachment_id']) && absint($file['attachment_id']) !== $attachment_id)) {
-                return new WP_Error('amf_delete_family_referenced','Un dérivé est référencé par URL ou sa propriété est ambiguë. Suppression directe bloquée.');
-            }
-            $rel=AMF_Utils::normalize_rel_path($file['rel_path']);
-            $abs=AMF_Utils::safe_abs_path($rel);
-            if (!$abs || !AMF_Utils::looks_like_image_rel_path($rel) || is_link($abs) ||
-                (file_exists($abs) && (!AMF_Utils::is_safe_existing_upload_file($rel) || (int)@filesize($abs)!==(int)$file['bytes']))) {
-                return new WP_Error('amf_delete_family_changed','Fichier modifié ou chemin non sûr. Relancez un audit.');
-            }
-            $paths[$rel]=true;
-        }
-        $current=AMF_Utils::normalize_rel_path((string)get_post_meta($attachment_id,'_wp_attached_file',true));
-        if (!$current || $current!==AMF_Utils::normalize_rel_path($media_row['rel_path'])) {
-            return new WP_Error('amf_delete_attachment_changed','Le fichier principal a changé depuis le scan.');
-        }
-        return $this->verify_wordpress_generated_paths($attachment_id,$current,$paths);
-    }
+	/**
+	 * Fail closed when direct attachment deletion would remove referenced or
+	 * unscanned derivatives. The explicit family action has a separate, stronger
+	 * confirmation path for intentionally referenced media.
+	 */
+	private function verify_attachment_family_for_deletion( $scan_id, $attachment_id, $media_row ) {
+		$family_key = AMF_Utils::family_key_for_attachment( $attachment_id );
+		$files_table = $this->db->table( 'files' );
+		$rows = $this->wpdb->get_results( $this->wpdb->prepare(
+			"SELECT * FROM {$files_table} WHERE scan_id = %d AND (family_key = %s OR attachment_id = %d) AND physical = 1",
+			$scan_id, $family_key, $attachment_id
+		), ARRAY_A );
+		if ( ! $rows ) {
+			return new WP_Error( 'amf_delete_family_not_scanned', 'Aucun fichier physique de cette famille n’a été vérifié. Relancez un audit avant suppression.' );
+		}
+		$scanned_paths = array();
+		foreach ( $rows as $file ) {
+			if ( absint( $file['direct_usage_count'] ) > 0 || 'unassociated_ambiguous' === $file['classification'] ||
+				( absint( $file['attachment_id'] ) && absint( $file['attachment_id'] ) !== $attachment_id ) ) {
+				return new WP_Error( 'amf_delete_family_referenced', 'Suppression bloquée : un dérivé de ce média est référencé par URL, ambigu ou partagé. Consultez les utilisations de la famille.' );
+			}
+			$rel = AMF_Utils::normalize_rel_path( $file['rel_path'] );
+			$abs = AMF_Utils::safe_abs_path( $rel );
+			if ( ! $abs || ! AMF_Utils::looks_like_image_rel_path( $rel ) ||
+				( is_link( $abs ) || ( file_exists( $abs ) && ( ! AMF_Utils::is_safe_existing_upload_file( $rel ) || (int) @filesize( $abs ) !== (int) $file['bytes'] ) ) ) ) {
+				return new WP_Error( 'amf_delete_family_changed', 'Un fichier est absent du périmètre de sécurité ou a été modifié depuis le scan. Relancez l’audit.' );
+			}
+			$scanned_paths[ $rel ] = true;
+		}
+		$current_rel = AMF_Utils::normalize_rel_path( (string) get_post_meta( $attachment_id, '_wp_attached_file', true ) );
+		if ( ! $current_rel || $current_rel !== AMF_Utils::normalize_rel_path( $media_row['rel_path'] ) ) {
+			return new WP_Error( 'amf_delete_attachment_changed', 'Le fichier principal a changé depuis le dernier scan. Relancez l’analyse.' );
+		}
+		return $this->verify_wordpress_generated_paths( $attachment_id, $current_rel, $scanned_paths );
+	}
 
-    private function verify_wordpress_generated_paths($attachment_id,$current_rel,$paths) {
-        $metadata=wp_get_attachment_metadata($attachment_id);
-        $folder=dirname($current_rel);
-        $folder='.'===$folder?'':$folder.'/';
-        $declared=array($current_rel);
-        if (is_array($metadata)) {
-            if (!empty($metadata['file']) && AMF_Utils::normalize_rel_path($metadata['file'])!==$current_rel) {
-                return new WP_Error('amf_delete_metadata_changed','Métadonnées du fichier principal incohérentes.');
-            }
-            foreach(array('thumb','original_image','source_image','animated_video','animated_video_poster') as $field) {
-                if(!empty($metadata[$field]) && is_string($metadata[$field])) $declared[]=$folder.wp_basename($metadata[$field]);
-            }
-            if(!empty($metadata['sizes']) && is_array($metadata['sizes'])) {
-                foreach($metadata['sizes'] as $size) if(is_array($size) && !empty($size['file'])) $declared[]=$folder.wp_basename($size['file']);
-            }
-        }
-        $backups=get_post_meta($attachment_id,'_wp_attachment_backup_sizes',true);
-        if(is_array($backups)) foreach($backups as $size) if(is_array($size)&&!empty($size['file'])) $declared[]=$folder.wp_basename($size['file']);
-        foreach($declared as $file) {
-            $rel=AMF_Utils::normalize_rel_path($file);
-            $abs=AMF_Utils::safe_abs_path($rel);
-            if(!$abs || is_link($abs) || (file_exists($abs) && !AMF_Utils::is_safe_existing_upload_file($rel))) {
-                return new WP_Error('amf_delete_unsafe_metadata_path','Métadonnées contenant un chemin non sûr.');
-            }
-            if(is_file($abs) && !isset($paths[$rel])) {
-                return new WP_Error('amf_delete_new_derivative','Un nouveau dérivé existe depuis le scan. Recommencez l’analyse.');
-            }
-        }
-        return true;
-    }
+	/** Guard everything wp_delete_attachment() may delete, including backups. */
+	private function verify_wordpress_generated_paths( $attachment_id, $current_rel, $scanned_paths ) {
+		$meta = wp_get_attachment_metadata( $attachment_id );
+		$folder = dirname( $current_rel );
+		$folder = '.' === $folder ? '' : $folder . '/';
+		$declared = array( $current_rel );
+		if ( is_array( $meta ) ) {
+			if ( ! empty( $meta['file'] ) && AMF_Utils::normalize_rel_path( $meta['file'] ) !== $current_rel ) {
+				return new WP_Error( 'amf_delete_metadata_changed', 'Les métadonnées du fichier principal sont incohérentes. Relancez l’audit.' );
+			}
+			foreach ( array( 'thumb', 'original_image', 'source_image', 'animated_video', 'animated_video_poster' ) as $key ) {
+				if ( ! empty( $meta[ $key ] ) && is_string( $meta[ $key ] ) ) {
+					$declared[] = $folder . wp_basename( $meta[ $key ] );
+				}
+			}
+			if ( ! empty( $meta['sizes'] ) && is_array( $meta['sizes'] ) ) {
+				foreach ( $meta['sizes'] as $size ) {
+					if ( is_array( $size ) && ! empty( $size['file'] ) ) {
+						$declared[] = $folder . wp_basename( $size['file'] );
+					}
+				}
+			}
+		}
+		$backup_sizes = get_post_meta( $attachment_id, '_wp_attachment_backup_sizes', true );
+		if ( is_array( $backup_sizes ) ) {
+			foreach ( $backup_sizes as $size ) {
+				if ( is_array( $size ) && ! empty( $size['file'] ) ) {
+					$declared[] = $folder . wp_basename( $size['file'] );
+				}
+			}
+		}
+		foreach ( $declared as $path ) {
+			$rel = AMF_Utils::normalize_rel_path( $path );
+			$abs = AMF_Utils::safe_abs_path( $rel );
+			if ( ! $abs || is_link( $abs ) || ( file_exists( $abs ) && ! AMF_Utils::is_safe_existing_upload_file( $rel ) ) ) {
+				return new WP_Error( 'amf_delete_unsafe_metadata_path', 'Les métadonnées du média contiennent un chemin non autorisé.' );
+			}
+			if ( is_file( $abs ) && ! isset( $scanned_paths[ $rel ] ) ) {
+				return new WP_Error( 'amf_delete_new_derivative', 'Un original ou dérivé a été ajouté depuis le dernier scan. Relancez l’audit avant de supprimer.' );
+			}
+		}
+		return true;
+	}
 
 	private function remove_attachment_scan_rows( $scan_id, $attachment_id ) {
 		$files_table = $this->db->table( 'files' );
