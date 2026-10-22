@@ -8,7 +8,7 @@
 
 [![WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B?logo=wordpress&logoColor=white)](https://wordpress.org/)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4?logo=php&logoColor=white)
-![Version](https://img.shields.io/badge/version-2.3.2-4d7c00)
+![Version](https://img.shields.io/badge/version-2.3.3-4d7c00)
 ![Maintenance](https://img.shields.io/badge/maintenance-active-2ea44f)
 
 **Développé et maintenu par [Benfou](https://www.benfou.fr/)**
@@ -100,7 +100,7 @@ Les rattachements historiques à des articles et les métadonnées de tailles ne
 Les versions sont identifiées par des tags comme `v2.3.2` ou `v2.3.3`. GitHub Actions prépare le ZIP WordPress à partir du tag publié.
 
 > [!NOTE]
-> La **v2.3.2 ne vérifie pas encore les mises à jour GitHub**. Rendre le dépôt public simplifie leur distribution, mais un client de mise à jour devra être intégré à l'extension avant que WordPress et MainWP puissent proposer les nouvelles versions directement.
+> La v2.3.3 intègre la détection des nouvelles GitHub Releases publiques avec le mécanisme natif WordPress. Cette version doit être installée une première fois manuellement pour activer cette fonction.ndre le dépôt public simplifie leur distribution, mais un client de mise à jour devra être intégré à l'extension avant que WordPress et MainWP puissent proposer les nouvelles versions directement.
 
 ## 💬 Retours et contributions
 

@@ -1,25 +1,27 @@
 # Historique des versions — Audit Médias
 
-Les modifications de documentation et d'automatisation du dépôt ne changent pas la version installée.
+## 2.3.3 — 22 octobre 2026
+- Interface clarifiée : en-tête de présentation, états de sécurité et de scan, parcours guidé, filtres plus lisibles et affichage responsive.
+- Suppressions : un attachment ne peut plus être supprimé directement si un dérivé possède une référence URL détectée.
+- Contrôle des sous-tailles et sauvegardes WordPress créées depuis le dernier scan avant toute suppression.
+- Détection des futures mises à jour via les GitHub Releases publiques grâce au mécanisme natif WordPress Update URI, sans jeton.
+- Aucune migration de base : réglages et résultats existants conservés.
 
 ## 2.3.2 — 22 octobre 2026
-- Détection renforcée des shortcodes et arrière-plans WPBakery.
-- Prise en compte de déclarations CSS et de plusieurs formes d'URL CDN, notamment Jetpack Photon.
-- Nouveau scan complet exigé après le changement du moteur de références.
+- Amélioration des shortcodes, arrière-plans WPBakery et URL CDN / Jetpack Photon.
+- Audit complet exigé pour les anciens résultats.
 
 ## 2.3.1
-- Correction des filtres de familles comportant des références URL vers des fichiers dérivés.
+- Correction des familles avec références URL sur les dérivés.
 
 ## 2.3.0
-- Refonte de l'interface d'audit.
-- Vérification indépendante et progressive des affectations WooCommerce.
-- Distinction des rattachements historiques et des utilisations actuelles.
+- Refonte UX et vérification indépendante WooCommerce.
 
 ## 2.2.x
-- Amélioration de la gestion des rattachements historiques WooCommerce.
+- Gestion des rattachements historiques WooCommerce.
 
 ## 2.1.x
-- Actions groupées et tris.
+- Actions groupées et tri.
 
 ## 2.0.x
-- Généralisation de l'audit, familles de fichiers et suppressions manuelles.
+- Familles de fichiers et suppressions manuelles.

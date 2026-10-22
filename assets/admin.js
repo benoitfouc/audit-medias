@@ -31,6 +31,8 @@
         $('#amf-progress').attr('data-scan-id', status.id);
         $('#amf-phase-label').text(status.phase_label || status.phase || 'Analyse');
         $('#amf-progress-bar').css('width', pct + '%').toggleClass('amf-indeterminate', total === 0 && status.status !== 'complete' && running);
+        $('#amf-progress-track').attr('aria-valuenow', pct).attr('aria-valuetext', (status.phase_label || 'Analyse') + ' : ' + pct + ' %');
+        $('#amf-scan-state').text(status.status === 'complete' ? 'Terminée' : (running ? 'En cours' : 'À reprendre'));
         $('#amf-progress-numbers').text(total > 0 ? (done + ' / ' + total) : (done ? done + ' éléments analysés' : ''));
         $('#amf-progress-message').text(status.message || defaultMessage(status));
         var batch = parseInt(status.batch_limit || 0, 10);
