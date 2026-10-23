@@ -722,10 +722,6 @@ class AMF_Admin {
 	}
 
     private function render_filter_form( $tab, $selects, $search, $total, $per_page ) {
-        $advanced = array();
-        foreach (array('assoc','state') as $name) {
-            if (isset($selects[$name])) { $advanced[$name]=$selects[$name]; unset($selects[$name]); }
-        }
         echo '<form method="get" class="amf-filters amf-client-filters"><input type="hidden" name="page" value="audit-medias"><input type="hidden" name="tab" value="'.esc_attr($tab).'"><input type="hidden" name="per_page" value="'.esc_attr($per_page).'">';
         foreach (array('orderby','order') as $key) {
             if (isset($_GET[$key]) && is_scalar($_GET[$key])) { echo '<input type="hidden" name="'.esc_attr($key).'" value="'.esc_attr(sanitize_key(wp_unslash($_GET[$key]))).'">'; }
@@ -742,13 +738,6 @@ class AMF_Admin {
         }
         foreach ($selects as $name => $options) { $this->render_filter_select($name,$options); }
         echo '<button class="button button-primary">Filtrer</button><a class="amf-reset-filters" href="'.esc_url(admin_url('tools.php?page=audit-medias&tab='.$tab.'&per_page='.$per_page)).'">Réinitialiser</a><span class="amf-filter-count">'.esc_html(number_format_i18n($total)).' résultat(s)</span>';
-        if ($advanced) {
-            $open = false;
-            foreach ($advanced as $name => $options) { if (isset($_GET[$name]) && is_scalar($_GET[$name]) && '' !== (string)$_GET[$name]) { $open=true; } }
-            echo '<details class="amf-advanced-filters"'.($open ? ' open' : '').'><summary>Filtres avancés</summary><div>';
-            foreach ($advanced as $name => $options) { $this->render_filter_select($name,$options); }
-            echo '</div></details>';
-        }
         echo '</form>';
     }
 
