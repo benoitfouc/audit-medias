@@ -69,15 +69,32 @@ Logo original fourni par Benfou, interface claire noir/blanc et accent `#C0FA39`
 
 ## Mises à jour
 
-**Depuis la 2.3.6, les sites lisent un manifeste statique public, sans API REST GitHub ni jeton.** Les informations sont publiées après vérification du ZIP. La taille et le SHA-256 sont contrôlés avant extraction lors des mises à jour distantes. [Fonctionnement et transition depuis 2.3.3](docs/STATIC-UPDATES.md).
+Depuis la **2.3.6**, Audit Médias utilise le système natif de mises à jour WordPress et un [manifeste statique public](docs/STATIC-UPDATES.md), sans API REST GitHub ni jeton à configurer sur les sites. L’intégrité des ZIP est vérifiée avant leur extraction lors des mises à jour distantes.
 
-La **2.3.3** a introduit la détection des releases publiques via le mécanisme natif WordPress `Update URI`, sans jeton GitHub sur les sites. Elle doit être installée une première fois pour recevoir les propositions suivantes.
+Les nouvelles versions sont proposées automatiquement par WordPress et MainWP lors des vérifications habituelles. Une vérification immédiate reste possible dans **Audit Médias → Réglages → Mises à jour** ; elle n’installe rien et ne change pas les préférences de mise à jour automatique.
 
-À partir de la **2.3.4**, **Réglages > Rechercher une mise à jour** renouvelle les métadonnées de mise à jour. Cette action **n'installe rien** et ne change pas les préférences de mises à jour automatiques du site.
+[Documentation des mises à jour](docs/STATIC-UPDATES.md) · [Procédure de publication](docs/PUBLICATION.md) · [Toutes les releases](../../releases)
 
-La **2.3.5** affiche un diagnostic dans les réglages : version locale, cache, réponse HTTP, quota GitHub et proposition enregistrée par WordPress. La vérification manuelle interroge aussi GitHub si le contrôle WordPress.org échoue auparavant. Cela ne prouve pas la cause d’un blocage sur un site donné.
+## Historique des versions
 
-[Historique](CHANGELOG.md) · [Procédure de publication](docs/PUBLICATION.md) · [Validation 2.3.6](docs/VALIDATION-2.3.6.md)
+| Version | Date | Principales évolutions |
+| --- | --- | --- |
+| 2.3.10 | 23 octobre 2026 | Relance réelle des audits ; progression par étapes ; vue d’ensemble enrichie ; références Elementor mieux hiérarchisées. |
+| 2.3.9 | 23 octobre 2026 | Rattachement historique toujours visible ; logo Benfou transparent. |
+| 2.3.8 | 23 octobre 2026 | En-tête gris lisible ; filtres des médias côte à côte. |
+| 2.3.7 | 23 octobre 2026 | Charte Benfou épurée ; filtres et WooCommerce simplifiés ; journal HTML ; icône et boutons améliorés. |
+| 2.3.6 | 22 octobre 2026 | Mises à jour par manifeste public, sans quota API GitHub ; vérification SHA-256 des ZIP. |
+| 2.3.5 | 22 octobre 2026 | Identité Benfou ; diagnostic approfondi des mises à jour. |
+| 2.3.4 | 22 octobre 2026 | Interface recentrée sur les familles ; informations techniques déplacées ; actions groupées haut et bas. |
+| 2.3.3 | 22 octobre 2026 | Interface et tableaux modernisés ; suppression plus sûre ; premières mises à jour GitHub. |
+| 2.3.2 | 22 octobre 2026 | Meilleure détection WPBakery, images de fond et URL CDN. |
+| 2.3.1 | Date non documentée | Correction du filtrage des familles avec références URL sur les dérivés. |
+| 2.3.0 | Date non documentée | Refonte UX et vérification indépendante des affectations WooCommerce. |
+| 2.2.x | Date non documentée | Gestion des rattachements historiques WooCommerce. |
+| 2.1.x | Date non documentée | Actions groupées et tri. |
+| 2.0.x | Date non documentée | Familles de fichiers et suppressions manuelles. |
+
+**Détails de chaque version :** [consulter le changelog complet](CHANGELOG.md).
 
 ## Suppression et sécurité
 
