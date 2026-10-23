@@ -2,12 +2,12 @@
   "schema": 1,
   "slug": "audit-medias",
   "channel": "stable",
-  "version": "2.3.7",
-  "tag": "v2.3.7",
-  "package": "https://github.com/benoitfouc/audit-medias/releases/download/v2.3.7/audit-medias-v2.3.7.zip",
-  "sha256": "551672a3ee4fb75145715c9eaa497623f55e7e1758493b574f28041af0470ffd",
-  "size": 111496,
+  "version": "2.3.8",
+  "tag": "v2.3.8",
+  "package": "https://github.com/benoitfouc/audit-medias/releases/download/v2.3.8/audit-medias-v2.3.8.zip",
+  "sha256": "1646620318d0ccbfa3905eb860651d0f2baa41a99d8769d861290928d3a39c89",
+  "size": 111540,
   "requires": "6.2",
   "requires_php": "7.4",
-  "description": "# Audit Médias v2.3.7\n\n## Une interface plus simple\n- Accès direct **Ouvrir Audit Médias** depuis la liste des extensions.\n- Présentation Benfou principalement noire, blanche et grise ; vert réservé à quelques accents.\n- Icône Benfou pour les informations et mises à jour WordPress.\n- Journal des modifications formaté en HTML : titres, listes, liens, gras et code.\n- Boutons avec texte centré verticalement, y compris **Parcourir les médias**.\n\n## Trouver les médias à contrôler\n- Deux filtres : utilisation et lien avec la médiathèque, au lieu de trois.\n- **Sans utilisation détectée** vérifie les images produits, les autres références et les URL de tous les fichiers de la famille. Les associations ambiguës sont exclues.\n- Les anciens liens filtrés restent reconnus et signalés.\n- WooCommerce inclut toujours les produits, les variations et tous les rôles d'image ; retrait des deux sélecteurs redondants.\n\nLes réglages, résultats, actions groupées et protections de suppression sont conservés. Aucun nouvel audit imposé depuis 2.3.6.\n\n**Important :** aucune utilisation détectée n'est pas une garantie de non-utilisation. Vérifier les résultats et sauvegarder avant toute suppression.\nLe journal HTML et l'icône sont fournis par le client installé : ils apparaissent après installation de la 2.3.7, pas rétroactivement dans le client 2.3.6.\n"
+  "description": "# Audit Médias v2.3.8\n\n## Interface corrigée\n- Bandeau Benfou en gris clair **#EBEBEB**, avec titre, sous-titre et version visibles en texte foncé.\n- Les deux filtres **Toutes les utilisations** et **Tous les fichiers** sont côte à côte avec le champ de recherche ; retrait du panneau « Filtres avancés ».\n- Sur petit écran, les filtres peuvent passer sur plusieurs lignes sans faire déborder la page.\n\nAucune modification de la détection des références, des règles de suppression, des réglages ou des résultats de scan. Aucune nouvelle analyse n'est imposée.\n\n**Rappel :** aucune utilisation détectée n'est pas une garantie d'absence d'utilisation. Vérifiez avant toute suppression.\n"
 }
