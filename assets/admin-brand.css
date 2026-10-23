@@ -1,17 +1,17 @@
-/* Benfou 2.3.7: monochrome interface, restrained lime accent. Scoped to this plugin. */
+/* Benfou 2.3.8: accessible light-grey header, monochrome interface, restrained lime accent. */
 .amf-wrap{--amf-primary:#171717;--amf-ink:#181818;--amf-muted:#626262;--amf-border:#dedede;--amf-lime:#c0fa39;--amf-surface:#fff;color:var(--amf-ink);font-family:Montserrat,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light}
 .amf-wrap h1,.amf-wrap h2,.amf-wrap h3,.amf-wrap h4{color:var(--amf-ink);letter-spacing:-.025em}
 .amf-wrap p,.amf-wrap .description{color:var(--amf-muted)}
 .amf-wrap a{color:#292929;text-decoration-color:#999;text-underline-offset:3px}
 .amf-wrap a:hover{color:#000;text-decoration-color:#000}
-.amf-wrap .amf-client-header{background:#181818;border:1px solid #181818;border-radius:10px;padding:21px 24px;margin:18px 0 20px;gap:16px}
+.amf-wrap .amf-client-header{background:#ebebeb;border:1px solid #d8d8d8;border-radius:10px;padding:21px 24px;margin:18px 0 20px;gap:16px}
 .amf-wrap .amf-brand-heading{gap:22px;flex-wrap:nowrap;min-width:0}
-.amf-wrap .amf-brand-logo{display:inline-flex;flex-shrink:0;align-items:center;background:#fff;border-radius:6px;padding:8px 12px}
+.amf-wrap .amf-brand-logo{display:inline-flex;flex-shrink:0;align-items:center;background:#fff;border:1px solid #dedede;border-radius:6px;padding:8px 12px}
 .amf-wrap .amf-brand-logo img{display:block;width:115px;height:auto;max-width:100%}
-.amf-wrap .amf-brand-divider{height:40px;width:1px;background:#4b4b4b;flex-shrink:0}
-.amf-wrap .amf-client-header h1{color:#fff;font-size:23px;font-weight:700;gap:10px;flex-wrap:wrap;margin:0}
-.amf-wrap .amf-version{color:#dedede;background:#2b2b2b;border-color:#555;font-size:10px;letter-spacing:.02em}
-.amf-wrap .amf-byline{font-size:11px;color:#bcbcbc;display:block;margin-top:3px}
+.amf-wrap .amf-brand-divider{height:40px;width:1px;background:#bcbcbc;flex-shrink:0}
+.amf-wrap .amf-client-header h1{color:#171717!important;font-size:23px;font-weight:700;gap:10px;flex-wrap:wrap;margin:0}
+.amf-wrap .amf-client-header .amf-version{color:#282828!important;background:#f9f9f9;border-color:#c5c5c5;font-size:10px;letter-spacing:.02em}
+.amf-wrap .amf-client-header .amf-byline{font-size:11px;color:#555!important;display:block;margin-top:3px}
 .amf-wrap .nav-tab-wrapper{gap:2px;border-color:var(--amf-border)}
 .amf-wrap .nav-tab-wrapper .nav-tab{color:#646464;border-radius:6px 6px 0 0;padding:12px 17px;font-weight:550}
 .amf-wrap .nav-tab-wrapper .nav-tab:hover{color:#171717;background:#ececec}
@@ -30,7 +30,7 @@ body.wp-admin .amf-wrap .button:disabled,.amf-wrap .button:disabled,.amf-wrap .b
 .amf-wrap input[type=text],.amf-wrap input[type=number],.amf-wrap input[type=search],.amf-wrap select{font-family:inherit;color:#282828;border-color:#cfcfcf;border-radius:6px;background-color:#fff}
 .amf-wrap input[type=search],.amf-wrap select{min-height:36px}
 .amf-wrap :is(a,button,input,select,summary):focus-visible,.amf-wrap .amf-table-wrap:focus-visible{outline:2px solid #313131;outline-offset:3px;box-shadow:0 0 0 2px #fff}
-.amf-wrap .amf-client-header a:focus-visible{outline-color:var(--amf-lime)}
+.amf-wrap .amf-client-header a:focus-visible{outline-color:#252525}
 .amf-wrap .amf-scan-panel,.amf-wrap .amf-info-box,.amf-wrap .amf-priority-box,.amf-wrap .amf-card,.amf-wrap .amf-priority-card,.amf-wrap .amf-filters,.amf-wrap .amf-disclosure{border-color:var(--amf-border);background:#fff;box-shadow:none}
 .amf-wrap .amf-card strong{color:#191919}.amf-wrap .amf-card span,.amf-wrap .amf-card small{color:#656565}
 .amf-wrap .amf-priority-card{border-left:3px solid #303030}
@@ -41,7 +41,6 @@ body.wp-admin .amf-wrap .button:disabled,.amf-wrap .button:disabled,.amf-wrap .b
 .amf-wrap .amf-status-waiting{background:#fff8e8;color:#77520b;border-color:#eddaaa}
 .amf-wrap .amf-disclosure>summary{color:#343434}
 .amf-wrap .amf-diagnostic-list dd{color:#555}.amf-wrap .amf-diagnostic-list dt{color:#303030}
-.amf-wrap .amf-advanced-filters{border-color:#e2e2e2}
 .amf-wrap .amf-product-index-compact .amf-product-index-status{color:#666}
 .amf-wrap .amf-safety-note{color:#666}
 .amf-wrap .amf-usage-table>thead>tr>th,.amf-wrap .amf-table>thead>tr>th{background:#262626;color:#f4f4f4;border-color:#3c3c3c;letter-spacing:.025em}
