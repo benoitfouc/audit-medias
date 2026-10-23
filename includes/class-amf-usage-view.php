@@ -214,13 +214,34 @@ class AMF_Usage_View {
         return $link;
     }
 
+    /**
+     * Show the native post_parent as *historical context*, not proof of usage.
+     * Always visible in the family detail when a WordPress parent is recorded.
+     */
     public function history_html( $attachment_id ) {
-        $p = $attachment_id ? get_post($attachment_id) : null;
+        $p = $attachment_id ? get_post( $attachment_id ) : null;
         if ( ! $p || 'attachment' !== $p->post_type || ! $p->post_parent ) { return ''; }
-        $link = $this->products->source_link((int)$p->post_parent);
-        $html = '<details class="amf-history-note"><summary>Ancien rattachement WordPress</summary><p>';
-        $html .= $link['url'] ? '<a href="' . esc_url($link['url']) . '" target="_blank" rel="noopener noreferrer">' . esc_html($link['title']) . ' &#8599;</a>' : esc_html($link['title']);
-        return $html . '</p><p class="description">Origine du téléversement uniquement : ce rattachement ne prouve pas une utilisation actuelle.</p></details>';
+
+        $link = $this->products->source_link( (int) $p->post_parent );
+        $public_url = ! empty( $link['url'] ) ? esc_url( $link['url'] ) : '';
+        $edit_url = ! empty( $link['edit_url'] ) ? esc_url( $link['edit_url'] ) : '';
+        $html = '<section class="amf-history-note" aria-label="Ancien rattachement WordPress">';
+        $html .= '<div class="amf-history-note-header"><span class="dashicons dashicons-admin-links" aria-hidden="true"></span>';
+        $html .= '<strong>Ancien rattachement WordPress</strong><span class="amf-history-note-tag">Indice historique</span></div>';
+        $html .= '<p class="amf-history-note-source"><span>Contenu associé :</span> ';
+        if ( $public_url ) {
+            $html .= '<a href="' . $public_url . '" target="_blank" rel="noopener noreferrer">' . esc_html( $link['title'] ) . ' &#8599;</a>';
+        } else {
+            $html .= '<strong>' . esc_html( $link['title'] ) . '</strong>';
+        }
+        if ( ! empty( $link['state'] ) ) {
+            $html .= ' <span class="amf-history-note-state">(' . esc_html( $link['state'] ) . ')</span>';
+        }
+        if ( $edit_url ) {
+            $html .= ' <a class="amf-history-note-edit" href="' . $edit_url . '">Ouvrir dans WordPress</a>';
+        }
+        $html .= '</p><p class="description">Ce rattachement enregistré dans WordPress peut aider à retrouver l’origine du média. <strong>Il ne prouve pas que l’image est encore utilisée.</strong></p></section>';
+        return $html;
     }
     public function list_data( $scan, $mode, $filters, $usage_ready ) {
         $sid = (int)$scan['id'];
