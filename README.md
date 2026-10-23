@@ -8,7 +8,7 @@
 
 ![WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B?logo=wordpress&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4?logo=php&logoColor=white)
-![Version](https://img.shields.io/badge/version-2.3.7-C0FA39)
+![Version](https://img.shields.io/badge/version-2.3.10-C0FA39)
 
 Développé et maintenu par **[Benfou](https://www.benfou.fr/)**
 
