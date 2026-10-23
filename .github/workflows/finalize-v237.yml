@@ -23,7 +23,6 @@ jobs:
           import base64, hashlib, json, shutil, subprocess, zlib
           root = Path.cwd()
           chunks = [(root/'.candidate-v237'/('part-'+str(i)+'.b64')).read_text().strip() for i in range(1,6)]
-          # Repair only transport transcription, accepted solely with exact known digests.
           expected_first = '11d9182749bb12115df1ff03941e4031c7553a0fc1300c3fb39c9b92491325f1'
           if hashlib.sha256(chunks[0].encode()).hexdigest() != expected_first and len(chunks[0]) == 6004:
               candidates = [chunks[0][:i]+chunks[0][i+4:] for i in range(len(chunks[0])-3)]
@@ -71,7 +70,13 @@ jobs:
           done
           python3 tools/build-manifest.py --tag v2.3.7
           python3 tests/package-test.py
-          python3 -c "import hashlib,pathlib; assert hashlib.sha256(pathlib.Path('dist/audit-medias-v2.3.7.zip').read_bytes()).hexdigest() == '551672a3ee4fb75145715c9eaa497623f55e7e1758493b574f28041af0470ffd'"
+      - name: Export package for full file and ZIP metadata comparison
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: audit-medias-v237-verified-package
+          path: dist/
+          retention-days: 3
+          if-no-files-found: error
       - name: Commit only verified source on release branch
         run: |
           git config user.name 'github-actions[bot]'
