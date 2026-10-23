@@ -28,8 +28,9 @@ client = (root / 'assets/admin-client.css').read_text(encoding='utf-8')
 admin = (root / 'includes/class-amf-admin.php').read_text(encoding='utf-8')
 main = (root / 'audit-medias.php').read_text(encoding='utf-8')
 
-check('Version: 2.3.8' in main and "define( 'AMF_VERSION', '2.3.8' );" in main,
-      'header and constant use version 2.3.8')
+version = re.search(r'\* Version: (\d+\.\d+\.\d+)', main)
+check(version is not None and f"define( 'AMF_VERSION', '{version[1]}' );" in main,
+      'header and AMF_VERSION remain consistent')
 check(re.search(r'\.amf-wrap \.amf-client-header\{[^}]*background:#ebebeb', brand) is not None,
       'brand header has the requested grey background')
 check(re.search(r'\.amf-wrap \.amf-client-header h1\{color:#171717!important', brand) is not None,
