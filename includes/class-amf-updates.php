@@ -8,6 +8,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * No third-party library, GitHub credentials or client-specific configuration.
  */
 if (!class_exists('AMF_Static_Manifest', false)) { require_once __DIR__.'/class-amf-static-manifest.php'; }
+require_once __DIR__.'/class-amf-release-notes.php';
+require_once __DIR__.'/class-amf-presentation.php';
 class AMF_Updates {
 	const REPOSITORY = 'benoitfouc/audit-medias';
 	const UPDATE_URI = 'https://github.com/benoitfouc/audit-medias';
@@ -16,6 +18,7 @@ class AMF_Updates {
 	const PLUGIN_BASENAME = 'audit-medias/audit-medias.php';
 
 	public static function register() {
+        AMF_Presentation::register();
 		// WordPress evaluates this filter in cron and MainWP update checks too.
 		add_filter( 'update_plugins_github.com', array( __CLASS__, 'check_update' ), 10, 4 );
 		add_filter( 'plugins_api', array( __CLASS__, 'plugin_information' ), 10, 3 );
@@ -51,7 +54,7 @@ class AMF_Updates {
 			AMF_Static_Manifest::sync_wordpress($release, AMF_VERSION);
 		}
 	}
-	private static function offer($release) { return AMF_Static_Manifest::offer($release); }
+	private static function offer($release) { $offer=AMF_Static_Manifest::offer($release); $offer['icons']=AMF_Presentation::icons(); return $offer; }
 
 	/** Only intercept this plugin, never other GitHub-hosted extensions. */
 	public static function check_update( $update, $plugin_data, $plugin_file, $locales ) {
@@ -88,9 +91,10 @@ class AMF_Updates {
 			'requires'      => $release['requires'],
 			'requires_php'  => $release['requires_php'],
 			'download_link' => $release['package'],
+            'icons'         => AMF_Presentation::icons(),
 			'sections'      => array(
 				'description' => '<p>Audit des médias WordPress, recherche des références et suppression manuelle contrôlée des familles de fichiers.</p><p><a href="' . esc_url( self::UPDATE_URI ) . '">Code source et documentation GitHub</a>.</p>',
-				'changelog'   => $changelog ? nl2br( esc_html( $changelog ) ) : '<p>Consulter les notes de version sur GitHub.</p>',
+				'changelog'   => AMF_Release_Notes::render($changelog),
 			),
 		);
 	}

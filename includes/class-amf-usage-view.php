@@ -2,6 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /** Shared presentation: product assignments now; other references at last full audit. */
+require_once __DIR__.'/class-amf-media-filters.php';
 class AMF_Usage_View {
     private $db;
     private $wpdb;
@@ -266,6 +267,8 @@ class AMF_Usage_View {
         $no_other = '(COALESCE(o.other_count,0)=0 AND COALESCE(g.direct_usage_count,0)=0)';
         $has_other = '(COALESCE(o.other_count,0)>0 OR COALESCE(g.direct_usage_count,0)>0)';
         $no_usage = '(COALESCE(w.wc_count,0)=0 AND ' . $no_other . ')';
+        $usage_condition=AMF_Media_Filters::condition(isset($filters['usage'])?$filters['usage']:'',$usage_ready,$wc_valid,!empty($s['available']));
+        if ($usage_condition) { $where[]=$usage_condition; }
         if ( $filters['s'] !== '' ) {
             $like = '%' . $this->wpdb->esc_like($filters['s']) . '%';
             $where[] = '(g.filename LIKE %s OR g.title LIKE %s OR g.family_stem LIKE %s OR g.sample_rel_path LIKE %s OR g.attachment_id=%d' .

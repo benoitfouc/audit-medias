@@ -9,6 +9,7 @@ $GLOBALS['cache']=array();$GLOBALS['options']=array();$GLOBALS['hooks']=array();
 $GLOBALS['allowed']=true;$GLOBALS['nonce_ok']=true;$GLOBALS['base']='audit-medias/audit-medias.php';$GLOBALS['checks']=0;
 function add_filter($h,$c,$p=10,$a=1){$GLOBALS['hooks'][$h][]=$c;} function add_action($h,$c,$p=10,$a=1){add_filter($h,$c,$p,$a);}
 function plugin_basename($p){return $GLOBALS['base'];}
+function plugin_dir_url($p){return 'https://example.test/wp-content/plugins/audit-medias/';}
 function get_site_transient($k){return isset($GLOBALS['cache'][$k])?$GLOBALS['cache'][$k]:false;}
 function set_site_transient($k,$v,$ttl=0){$GLOBALS['cache'][$k]=$v;$GLOBALS['ttls'][$k]=$ttl;}
 function delete_site_transient($k){unset($GLOBALS['cache'][$k]);}

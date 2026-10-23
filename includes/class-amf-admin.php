@@ -408,13 +408,13 @@ class AMF_Admin {
 
     private function usage_filters() {
         $out = array();
-        foreach (array('s','state','assoc','wc_usage','other_usage','orderby','order') as $key) {
+        foreach (array('s','state','assoc','wc_usage','other_usage','usage','orderby','order') as $key) {
             $raw = isset($_GET[$key]) && is_scalar($_GET[$key]) ? wp_unslash($_GET[$key]) : '';
             $out[$key] = 's'===$key ? sanitize_text_field($raw) : sanitize_key($raw);
         }
         $out['per_page']=$this->get_per_page(50);
         $out['paged']=max(1,isset($_GET['paged']) ? absint($_GET['paged']) : 1);
-        return $out;
+        return AMF_Media_Filters::normalize($out,isset($_GET['usage']) && is_scalar($_GET['usage']));
     }
 
     private function product_index_panel( $scan ) {
@@ -456,20 +456,20 @@ class AMF_Admin {
         if (is_wp_error($result)) { echo '<div class="notice notice-error inline"><p>' . esc_html($result->get_error_message()) . '</p></div>'; return; }
         if (AMF_Reference_Parser::scan_is_current($scan) && (!$usage_ready || !$files_ready)) { echo '<div class="notice notice-info inline"><p>Audit principal en cours : les références et fichiers restent provisoires.</p></div>'; }
         $wc=$this->product_usage->status();
-        if ((!$wc['ready'] && $filters['wc_usage']) || (!$usage_ready && $filters['other_usage'])) {
+        if ((!$wc['ready'] && $filters['wc_usage']) || (!$usage_ready && $filters['other_usage']) || (in_array($filters['usage'],array('unused','used','products','review'),true) && (!$usage_ready || ($has_woo && !$wc['ready'])))) {
             echo '<div class="notice notice-warning inline"><p>Ce filtre attend une vérification terminée. Aucun résultat négatif n\'est affiché entre-temps.</p></div>';
         }
         $rows=$result['rows']; $cols=($is_files ? 8 : 6) - ($has_woo ? 0 : 1);
         $ids=array_column($rows,'attachment_id'); $keys=array_column($rows,'group_key');
         $product_refs=$this->product_usage->references($ids);
         $other_refs=$this->usage_view->other_references($sid,$ids,$keys);
-        $selects=array();
-        if ($wc['available']) {
-            $selects['wc_usage']=array(''=>'Toutes les images produits','absent'=>'Absentes des images produits','used'=>'Affectées à un produit','main'=>'Images principales','gallery'=>'Galeries','variation'=>'Images des variations');
-        }
-        $selects['other_usage']=array(''=>($has_woo ? 'Références hors images produits' : 'Toutes les références'),'none'=>'Sans autre référence','found'=>'Autres références détectées');
-        if ($is_files) { $selects['assoc']=array(''=>'Tous les médias / familles','unassociated'=>'Sans média WordPress identifié','probable'=>'Association physique à confirmer','review'=>'Sans référence détectée','confirmed'=>'Média WordPress identifié','direct_used'=>'Sans média, avec référence par URL'); }
-        else { $selects['state']=array(''=>'Tous les fichiers','missing'=>'Fichier principal absent','no_usage'=>'Sans référence détectée','used'=>'Avec une référence confirmée','probable'=>'Références à confirmer'); }
+        $selects=array('usage'=>AMF_Media_Filters::options($has_woo));
+        if ('legacy'===$filters['usage']) { $selects['usage']['legacy']='Ancien filtre conservé'; }
+        if ($is_files) {
+            $selects['assoc']=array(''=>'Tous les fichiers','confirmed'=>'Liés à la médiathèque','unassociated'=>'Absents de la médiathèque','probable'=>'Association à vérifier');
+            if ('review'===$filters['assoc']) { $selects['assoc']['review']='Sans référence (ancien filtre)'; }
+            if ('direct_used'===$filters['assoc']) { $selects['assoc']['direct_used']='Hors médiathèque, mais utilisés'; }
+        } else { $selects['state']=array(''=>'Tous les fichiers','missing'=>'Fichier principal absent','no_usage'=>'Sans référence détectée','used'=>'Avec une référence confirmée','probable'=>'Références à confirmer'); }
         $this->render_filter_form($mode,$selects,$filters['s'],$result['total'],$filters['per_page']);
         if ($is_files) { $this->render_bulk_actions($sid,'top'); }
         ?>
@@ -557,17 +557,13 @@ class AMF_Admin {
 		$scan_id = (int) $scan['id'];
 		$woo_ready = $this->woo_results_ready( $scan );
 		$severity = isset( $_GET['severity'] ) ? sanitize_key( wp_unslash( $_GET['severity'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$type = isset( $_GET['type'] ) ? sanitize_key( wp_unslash( $_GET['type'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$code = isset( $_GET['code'] ) ? sanitize_key( wp_unslash( $_GET['code'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$role = isset( $_GET['role'] ) ? sanitize_key( wp_unslash( $_GET['role'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$paged = max( 1, isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 1 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$per_page = $this->get_per_page( 50 );
 		$where = array( 'scan_id = %d', "object_type IN ('product','variation')" );
 		$params = array( $scan_id );
 		if ( in_array( $severity, array( 'critical', 'regenerable', 'manual' ), true ) ) { $where[] = 'severity = %s'; $params[] = $severity; }
-		if ( in_array( $type, array( 'product', 'variation' ), true ) ) { $where[] = 'object_type = %s'; $params[] = $type; }
 		if ( $code ) { $where[] = 'code = %s'; $params[] = $code; }
-		if ( 'gallery' === $role ) { $where[] = 'image_role = %s'; $params[] = 'Galerie'; }
 		$table = $this->db->table( 'issues' );
 		$where_sql = implode( ' AND ', $where );
 		$total = (int) $this->wpdb->get_var( $this->wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}", $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -577,10 +573,8 @@ class AMF_Admin {
 		<?php if ( ! class_exists( 'WooCommerce' ) ) : ?><div class="notice notice-info inline"><p>WooCommerce n’est pas actif sur ce site : cet onglet n’a rien à auditer.</p></div><?php endif; ?>
 		<?php if ( ! $woo_ready ) : ?><div class="notice notice-info inline"><p><strong>Audit WooCommerce pas encore terminé.</strong> Les résultats ne sont pas encore exhaustifs.</p></div><?php endif; ?>
 		<form method="get" class="amf-filters"><input type="hidden" name="page" value="audit-medias"><input type="hidden" name="tab" value="woo"><input type="hidden" name="per_page" value="<?php echo esc_attr( $per_page ); ?>">
-		<select name="severity"><option value="">Toutes les erreurs</option><?php foreach ( array( 'critical' => 'Critiques', 'manual' => 'Intervention manuelle', 'regenerable' => 'Régénérables' ) as $k => $v ) : ?><option value="<?php echo esc_attr( $k ); ?>" <?php selected( $severity, $k ); ?>><?php echo esc_html( $v ); ?></option><?php endforeach; ?></select>
-		<select name="type"><option value="">Produits + variations</option><option value="product" <?php selected( $type, 'product' ); ?>>Produits</option><option value="variation" <?php selected( $type, 'variation' ); ?>>Variations</option></select>
-		<select name="role"><option value="">Toutes les images</option><option value="gallery" <?php selected( $role, 'gallery' ); ?>>Galeries</option></select>
-		<select name="code"><option value="">Tous les problèmes</option><option value="original_missing" <?php selected( $code, 'original_missing' ); ?>>Original absent</option><option value="attachment_missing" <?php selected( $code, 'attachment_missing' ); ?>>Attachment supprimé</option><option value="woo_subsize_missing" <?php selected( $code, 'woo_subsize_missing' ); ?>>Taille WooCommerce absente</option><option value="source_too_small" <?php selected( $code, 'source_too_small' ); ?>>Image trop petite</option><option value="image_unreadable" <?php selected( $code, 'image_unreadable' ); ?>>Image illisible</option></select>
+		<select name="severity" aria-label="Priorité"><option value="">Toutes les erreurs</option><?php foreach ( array( 'critical' => 'Critiques', 'manual' => 'Intervention manuelle', 'regenerable' => 'Miniatures à recréer' ) as $k => $v ) : ?><option value="<?php echo esc_attr( $k ); ?>" <?php selected( $severity, $k ); ?>><?php echo esc_html( $v ); ?></option><?php endforeach; ?></select>
+		<select name="code" aria-label="Type de problème"><option value="">Tous les problèmes</option><option value="original_missing" <?php selected( $code, 'original_missing' ); ?>>Original absent</option><option value="attachment_missing" <?php selected( $code, 'attachment_missing' ); ?>>Média supprimé</option><option value="woo_subsize_missing" <?php selected( $code, 'woo_subsize_missing' ); ?>>Miniature manquante</option><option value="source_too_small" <?php selected( $code, 'source_too_small' ); ?>>Image trop petite</option><option value="image_unreadable" <?php selected( $code, 'image_unreadable' ); ?>>Image illisible</option></select>
 		<button class="button">Filtrer</button><span class="amf-filter-count"><?php echo esc_html( number_format_i18n( $total ) ); ?> résultat(s)</span></form>
 		<div class="amf-table-wrap"><table class="widefat striped amf-table"><thead><tr><th class="amf-col-media">Média</th><th>Produit</th><th>Type</th><th>État</th><th>Problème</th><th>Actions</th></tr></thead><tbody>
 		<?php if ( ! $rows ) : ?><tr><td colspan="6">Aucun problème correspondant détecté.</td></tr><?php endif; ?>
@@ -737,6 +731,15 @@ class AMF_Admin {
             if (isset($_GET[$key]) && is_scalar($_GET[$key])) { echo '<input type="hidden" name="'.esc_attr($key).'" value="'.esc_attr(sanitize_key(wp_unslash($_GET[$key]))).'">'; }
         }
         if (false !== $search) { echo '<label class="screen-reader-text" for="amf-search">Rechercher un média</label><input id="amf-search" type="search" name="s" value="'.esc_attr($search).'" placeholder="Rechercher une image…">'; }
+        $filters=$this->usage_filters();
+        if ('legacy'===$filters['usage']) {
+            foreach(array('wc_usage','other_usage') as $old) { echo '<input type="hidden" name="'.esc_attr($old).'" value="'.esc_attr($filters[$old]).'">'; }
+            echo '<p class="amf-legacy-filter-note">Ancien filtre conservé : images produits <code>'.esc_html($filters['wc_usage']?:'toutes').'</code>, autres références <code>'.esc_html($filters['other_usage']?:'toutes').'</code>. Choisissez un nouveau filtre pour le remplacer.</p>';
+        }
+        if ('files'===$tab && $filters['state']) {
+            $states=array('missing'=>'Fichier principal absent','no_usage'=>'Sans référence','used'=>'Référence confirmée','probable'=>'Références à confirmer');
+            if (isset($states[$filters['state']])) { echo '<input type="hidden" name="state" value="'.esc_attr($filters['state']).'"><span class="amf-legacy-filter-note">Critère ancien : '.esc_html($states[$filters['state']]).'. Réinitialisez pour le retirer.</span>'; }
+        }
         foreach ($selects as $name => $options) { $this->render_filter_select($name,$options); }
         echo '<button class="button button-primary">Filtrer</button><a class="amf-reset-filters" href="'.esc_url(admin_url('tools.php?page=audit-medias&tab='.$tab.'&per_page='.$per_page)).'">Réinitialiser</a><span class="amf-filter-count">'.esc_html(number_format_i18n($total)).' résultat(s)</span>';
         if ($advanced) {
@@ -751,7 +754,8 @@ class AMF_Admin {
 
     private function render_filter_select( $name, $options ) {
         $current=isset($_GET[$name]) && is_scalar($_GET[$name]) ? sanitize_key(wp_unslash($_GET[$name])) : '';
-        $labels=array('wc_usage'=>'Affectation aux images produits','other_usage'=>'Utilisations sur le site','assoc'=>'Association des fichiers','state'=>'État des fichiers');
+        if ('usage'===$name) { $f=$this->usage_filters(); $current=$f['usage']; }
+        $labels=array('usage'=>'Utilisation des médias','wc_usage'=>'Affectation aux images produits','other_usage'=>'Utilisations sur le site','assoc'=>'Association des fichiers','state'=>'État des fichiers');
         echo '<select name="'.esc_attr($name).'" aria-label="'.esc_attr(isset($labels[$name]) ? $labels[$name] : $name).'">';
         foreach ($options as $value => $label) { echo '<option value="'.esc_attr($value).'" '.selected($current,$value,false).'>'.esc_html($label).'</option>'; }
         echo '</select>';
@@ -830,7 +834,7 @@ class AMF_Admin {
 			'order'   => $next_order,
 			'paged'   => 1,
 		);
-		foreach ( array( 'assoc', 's', 'per_page', 'wc_usage', 'other_usage', 'state' ) as $name ) {
+		foreach ( array( 'assoc', 's', 'per_page', 'wc_usage', 'other_usage', 'state', 'usage' ) as $name ) {
 			if ( isset( $_GET[ $name ] ) && is_scalar( $_GET[ $name ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				$args[ $name ] = sanitize_text_field( wp_unslash( $_GET[ $name ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			}
