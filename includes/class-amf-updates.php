@@ -94,7 +94,7 @@ class AMF_Updates {
             'icons'         => AMF_Presentation::icons(),
 			'sections'      => array(
 				'description' => '<p>Audit des médias WordPress, recherche des références et suppression manuelle contrôlée des familles de fichiers.</p><p><a href="' . esc_url( self::UPDATE_URI ) . '">Code source et documentation GitHub</a>.</p>',
-				'changelog'   => AMF_Release_Notes::render($changelog),
+				'changelog'   => '<div class="amf-release-notes">' . AMF_Release_Notes::render($changelog) . '<p class="amf-full-changelog"><a href="https://github.com/benoitfouc/audit-medias/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">Consulter l\'historique complet des versions sur GitHub &#8599;</a></p></div>',
 			),
 		);
 	}

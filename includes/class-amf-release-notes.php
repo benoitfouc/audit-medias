@@ -35,7 +35,7 @@ class AMF_Release_Notes {
             if ($code) { $code_lines[]=$line; continue; }
             if (trim($line)==='') { $flush(); continue; }
             if (preg_match('/^\s*(#{1,6})\s+(.+)$/',$line,$m)) {
-                $flush(); $h=min(6,strlen($m[1])+1); $out.='<h'.$h.'>'.self::inline_text($m[2]).'</h'.$h.'>'; continue;
+                $flush(); $h=min(6,strlen($m[1])+2); $out.='<h'.$h.'>'.self::inline_text($m[2]).'</h'.$h.'>'; continue;
             }
             if (preg_match('/^\s*(?:[-+*]|[0-9]+\.)\s+(.+)$/',$line,$m)) {
                 $type=preg_match('/^\s*[0-9]+\./',$line)?'ol':'ul';

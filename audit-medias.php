@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Audit Médias
  * Description: Audit, regroupement et suppression contrôlée des médias WordPress, WooCommerce et des fichiers physiques de wp-content/uploads.
- * Version: 2.3.9
+ * Version: 2.3.10
  * Author: Benfou
  * Author URI: https://www.benfou.fr/
  * Plugin URI: https://github.com/benoitfouc/audit-medias
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'AMF_VERSION', '2.3.9' );
+define( 'AMF_VERSION', '2.3.10' );
 define( 'AMF_PAGE_SLUG', 'audit-medias' );
 define( 'AMF_PLUGIN_FILE', __FILE__ );
 define( 'AMF_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );

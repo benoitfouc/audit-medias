@@ -147,8 +147,10 @@ class AMF_Usage_View {
             return $ready ? '<span class="amf-text-muted">' . ($this->products->available() ? 'Aucune autre référence détectée' : 'Aucune référence détectée') . '</span>'
                 : '<span class="amf-badge amf-pending">Audit des références en attente</span>';
         }
+        // Only reorder the two visible previews; preserve all detected evidence.
+        $display_refs = $compact ? $this->prioritize_preview_references(array_values($refs)) : array_values($refs);
         $html = '<div class="amf-reference-list">';
-        foreach ( array_values($refs) as $i => $ref ) {
+        foreach ( $display_refs as $i => $ref ) {
             if ( $compact && $i===2 ) { $html .= '<details class="amf-more-references"><summary>Voir les ' . esc_html(count($refs)-2) . ' autres emplacements</summary>'; }
             $link = $this->other_link($ref);
             $html .= '<div class="amf-reference"><strong class="amf-reference-role">' . esc_html($link['role']) . '</strong>';
@@ -161,6 +163,38 @@ class AMF_Usage_View {
         if ( $compact && count($refs)>2 ) { $html .= '</details>'; }
         if ( $count > count($refs) ) { $html .= '<small class="amf-cell-note">Liste partielle : ' . esc_html($count) . ' emplacements comptés dans l\'audit.</small>'; }
         return $html . '</div>' . $direct;
+    }
+
+    /** Presentation-only ranking: explicit Elementor header/footer templates first. */
+    private function preview_reference_priority($reference) {
+        $subtype = isset($reference['source_subtype']) ? (string)$reference['source_subtype'] : '';
+        $type = isset($reference['source_type']) ? (string)$reference['source_type'] : '';
+        $confidence = isset($reference['confidence']) && 'probable' === $reference['confidence'] ? 100 : 0;
+        if ('elementor_library' === $type) {
+            $template_type = function_exists('get_post_meta') && !empty($reference['source_id'])
+                ? (string)get_post_meta((int)$reference['source_id'], '_elementor_template_type', true) : '';
+            if ('kit' === $template_type) { return $confidence + 85; }
+            if ('_elementor_data' === $subtype && in_array($template_type, array('header','footer'), true)) { return $confidence; }
+            if ('_elementor_data' === $subtype) { return $confidence + 10; }
+            return $confidence + 65;
+        }
+        if ('_elementor_data' === $subtype) { return $confidence + 20; }
+        if ('option' === $type || '_elementor_page_settings' === $subtype) { return $confidence + 90; }
+        return $confidence + 40;
+    }
+
+    private function prioritize_preview_references($refs) {
+        if (count($refs) <= 2) { return $refs; }
+        $ranked = array();
+        foreach ($refs as $index=>$reference) {
+            $ranked[] = array('reference'=>$reference,'index'=>$index,
+                'priority'=>$this->preview_reference_priority($reference));
+        }
+        usort($ranked, function($a,$b) {
+            if ($a['priority'] === $b['priority']) { return $a['index'] - $b['index']; }
+            return $a['priority'] < $b['priority'] ? -1 : 1;
+        });
+        return array_map(function($item) { return $item['reference']; },$ranked);
     }
 
     private function other_link( $r ) {
@@ -198,6 +232,10 @@ class AMF_Usage_View {
                     $link['role'] = 'Image dans le CSS WPBakery - ' . $type_label;
                 }
                 elseif ( '_elementor_data' === $sub ) { $link['role'] = 'Elementor - ' . $type_label; }
+                elseif ( '_elementor_page_settings' === $sub ) {
+                    $template = function_exists('get_post_meta') ? (string)get_post_meta((int)$r['source_id'], '_elementor_template_type', true) : '';
+                    $link['role'] = 'kit' === $template ? 'Elementor - Kit du site' : 'Elementor - Réglages du modèle';
+                }
                 elseif ( '_thumbnail_id' === $sub ) { $link['role'] = 'Image mise en avant - ' . $type_label; }
                 elseif ( in_array($sub,array('product','product_variation'),true) ) { $link['role'] = 'Description du produit'; }
                 elseif ( in_array($sub,array('post','page',$p->post_type),true) ) { $link['role'] = 'Contenu - ' . $type_label; }

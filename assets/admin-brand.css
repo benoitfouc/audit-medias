@@ -66,6 +66,13 @@ body.wp-admin .amf-wrap .button:disabled,.amf-wrap .button:disabled,.amf-wrap .b
 .amf-wrap .amf-update-actions form{margin:0}.amf-wrap .amf-update-message{padding:9px 12px;border-left:3px solid #555;background:#f3f3f3;font-size:12px}
 .amf-wrap .amf-update-message.is-error{border-left-color:#c48329;background:#fff8ed;color:#7b510d}
 .amf-wrap .amf-brand-note{font-size:11px;color:#777}
+.amf-wrap .amf-progress-head-right{display:inline-flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.amf-wrap .amf-phase-step{display:inline-flex;align-items:center;padding:4px 8px;border:1px solid #ccc;border-radius:5px;background:#f1f1f1;font-size:12px;font-weight:700;color:#292929;white-space:nowrap}
+body.wp-admin .amf-wrap .amf-browse-media.button-primary,.amf-wrap .amf-browse-media.button-primary{background:#c0fa39!important;border-color:#a9df29!important;color:#181818!important;font-weight:750}
+body.wp-admin .amf-wrap .amf-browse-media.button-primary:hover,.amf-wrap .amf-browse-media.button-primary:hover{background:#b2eb27!important;border-color:#99d01f!important;color:#181818!important}
+.amf-wrap .amf-overview-date{font-size:12px;color:#636363;margin:11px 0 8px}
+.amf-wrap .amf-overview-shortcuts{display:flex;flex-wrap:wrap;gap:8px 20px;margin:12px 0}
+.amf-wrap .amf-overview-shortcuts a{font-size:13px;font-weight:650;text-decoration:underline;text-underline-offset:3px}
 .amf-wrap .amf-sort-indicator,.amf-wrap .amf-bulk-progress{color:#444}
 .amf-wrap .amf-more-references summary,.amf-wrap .amf-file-accordion>summary,.amf-wrap .amf-usage-table .amf-reference a{color:#333}
 .amf-wrap .amf-probable{background:#f5f3e6;color:#756019}.amf-wrap .amf-ok{background:#edf7ef;color:#285a32}

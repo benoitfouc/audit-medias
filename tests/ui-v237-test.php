@@ -17,7 +17,7 @@ require __DIR__.'/../includes/class-amf-presentation.php';
 require __DIR__.'/../includes/class-amf-media-filters.php';
 $md="# Version 2.3.7\n\n## Nouveautes\n- **Important** : `audit-medias/`\n- [Guide](https://example.test/?a=1&b=2)\n\nTexte normal.\n\n1. Premier\n2. Deuxieme\n\n```html\n<script>alert(1)</script>\n```";
 $html=AMF_Release_Notes::render($md);
-foreach(array('<h2>Version 2.3.7</h2>','<h3>Nouveautes</h3>','<ul>','<ol>','<strong>Important</strong>','<code>audit-medias/</code>','rel="noopener noreferrer"','&lt;script&gt;','<p>Texte normal.</p>') as $s)check(strpos($html,$s)!==false,'format '.strip_tags($s));
+foreach(array('<h3>Version 2.3.7</h3>','<h4>Nouveautes</h4>','<ul>','<ol>','<strong>Important</strong>','<code>audit-medias/</code>','rel="noopener noreferrer"','&lt;script&gt;','<p>Texte normal.</p>') as $s)check(strpos($html,$s)!==false,'format '.strip_tags($s));
 check(strpos($html,'<script>')===false,'code fence HTML escaped');
 foreach(array('<img src=x onerror=alert(1)>','[x](javascript:alert(1))','**<svg onload=alert(1)>**','`<iframe>`') as $x){$r=AMF_Release_Notes::render($x);check(!preg_match('/<(img|svg|iframe|script)\b/i',$r),'raw HTML escaped');check(strpos($r,'href="javascript:')===false,'no unsafe link');}
 check(strlen(AMF_Release_Notes::render(str_repeat('x',100000)))<21000,'bounded release notes');

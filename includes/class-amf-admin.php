@@ -70,6 +70,8 @@ class AMF_Admin {
 				'presets'          => $this->scanner->performance_presets(),
 				'productIndex'     => $this->product_usage->status(),
 				'deletionEnabled'  => $this->actions->deletion_enabled(),
+                'autoRestart'      => current_user_can('manage_options') && isset($_GET['amf_restart_scan'], $_GET['_wpnonce']) && is_scalar($_GET['amf_restart_scan']) && is_scalar($_GET['_wpnonce']) && '1' === (string)wp_unslash($_GET['amf_restart_scan']) && (bool)wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'amf_restart_scan'),
+                'dashboardUrl'     => admin_url('tools.php?page=audit-medias&tab=dashboard'),
 				'i18n'             => array(
 					'confirmRestart'     => 'Recommencer l’analyse effacera uniquement les résultats de scan du plugin. Aucun média ni fichier uploads ne sera modifié. Continuer ?',
 					'error'              => 'Une erreur est survenue. Vous pouvez reprendre l’analyse.',
@@ -97,7 +99,7 @@ class AMF_Admin {
                 <span class="amf-status-chip <?php echo $this->actions->deletion_enabled() ? 'amf-status-danger' : 'amf-status-safe'; ?>">Suppressions <?php echo $this->actions->deletion_enabled() ? 'activées' : 'désactivées'; ?></span>
             </header>
             <?php if ( $scan && ! AMF_Reference_Parser::scan_is_current( $scan ) ) : ?>
-            <div class="notice notice-warning inline amf-parser-update"><p><strong>Un nouvel audit est nécessaire.</strong> <a href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=dashboard')); ?>">Relancer l’analyse</a> pour réactiver les filtres d’absence et les suppressions.</p></div>
+            <div class="notice notice-warning inline amf-parser-update"><p><strong>Un nouvel audit est nécessaire.</strong> <a href="<?php echo esc_url(wp_nonce_url(admin_url('tools.php?page=audit-medias&tab=dashboard&amf_restart_scan=1'), 'amf_restart_scan')); ?>">Relancer l’analyse</a> pour réactiver les filtres d’absence et les suppressions.</p></div>
             <?php endif; ?>
 			<nav class="nav-tab-wrapper">
 				<?php
@@ -301,12 +303,12 @@ class AMF_Admin {
         <section class="amf-scan-panel">
             <div class="amf-panel-heading"><h2>Analyse du site</h2><span id="amf-scan-state" class="amf-scan-live" aria-live="polite"><?php echo $ready ? 'Terminée' : ($scan ? 'À reprendre' : 'Non démarrée'); ?></span></div>
             <div id="amf-progress" class="amf-progress" data-scan-id="<?php echo esc_attr($scan_id); ?>">
-                <div class="amf-progress-head"><strong id="amf-phase-label"><?php echo $ready ? 'Analyse terminée' : 'Analyse des médias'; ?></strong><span id="amf-progress-numbers"></span></div>
+                <div class="amf-progress-head"><strong id="amf-phase-label"><?php echo $ready ? 'Analyse terminée' : 'Analyse des médias'; ?></strong><span class="amf-progress-head-right"><span class="amf-phase-step" id="amf-phase-step" aria-live="polite"></span><span id="amf-progress-numbers"></span></span></div>
                 <div id="amf-progress-track" class="amf-progress-track" role="progressbar" aria-label="Progression de l’étape" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="amf-progress-bar" class="amf-progress-bar"></div></div>
                 <p id="amf-progress-message" class="description"><?php echo $ready ? 'Consultez les médias et leurs utilisations.' : 'L’analyse ne supprime aucun fichier. Gardez cet onglet ouvert pour la faire avancer.'; ?></p>
             </div>
             <div class="amf-actions">
-                <?php if ($ready) : ?><a class="button button-primary" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=files')); ?>">Parcourir les médias</a><?php endif; ?>
+                <?php if ($ready) : ?><a class="button button-primary amf-browse-media" href="<?php echo esc_url(admin_url('tools.php?page=audit-medias&tab=files')); ?>">Parcourir les médias</a><?php endif; ?>
                 <button type="button" class="button <?php echo $ready ? '' : 'button-primary'; ?>" id="amf-start-scan"><?php echo $scan ? 'Relancer l’analyse' : 'Lancer l’analyse'; ?></button>
                 <?php if ($scan && 'complete' !== $scan['status']) : ?><button type="button" class="button" id="amf-resume-scan">Reprendre</button><button type="button" class="button" id="amf-pause-scan" disabled>Pause</button><?php endif; ?>
             </div>
@@ -319,8 +321,16 @@ class AMF_Admin {
             $this->stat_card('Médias WordPress',number_format_i18n($stats['media']));
             $this->stat_card('Fichiers analysés',$this->files_results_ready($scan) ? number_format_i18n($stats['physical_files']) : 'En attente');
             $this->stat_card('Sans référence détectée',$ready ? $stats['no_usage'] : 'En attente');
+            if ($ready) {
+                $used_label = is_numeric($stats['used']) ? number_format_i18n((int)$stats['used']) : $stats['used'];
+                $this->stat_card('Médias avec utilisation détectée', $used_label);
+                $this->stat_card('Fichiers hors médiathèque', number_format_i18n($stats['unassociated']));
+                $this->stat_card('Familles non associées à examiner', number_format_i18n($stats['review_families']));
+            }
             echo '</div>';
             if ($ready) {
+                if (!empty($scan['finished_at'])) { echo '<p class="amf-overview-date">Dernier audit terminé : <strong>'.esc_html($scan['finished_at']).'</strong></p>'; }
+                echo '<div class="amf-overview-shortcuts"><a href="'.esc_url(admin_url('tools.php?page=audit-medias&tab=files&usage=unused')).'">Examiner les familles sans utilisation détectée &#8599;</a><a href="'.esc_url(admin_url('tools.php?page=audit-medias&tab=files&usage=review')).'">Voir les associations à contrôler &#8599;</a></div>';
                 echo '<p class="amf-safety-note">Vérifiez les utilisations et sauvegardez le site avant toute suppression.</p>';
                 echo '<p><a href="'.esc_url(admin_url('tools.php?page=audit-medias&tab=errors')).'">Consulter les alertes de l’audit</a></p>';
             }

@@ -20,6 +20,9 @@ function wp_die($v){throw new RuntimeException('Forbidden: '.$v);} function add_
 function admin_url($v=''){return '/wp-admin/'.$v;} function self_admin_url($v=''){return admin_url($v);}
 function wp_nonce_field($action){echo '<input type="hidden" name="_wpnonce" value="fixture-nonce">';}
 function wp_create_nonce($action){return 'fixture-nonce';}
+function wp_nonce_url($url,$action){return $url.'&_wpnonce=fixture-nonce';}
+function wp_verify_nonce($nonce,$action){return $nonce==='fixture-nonce';}
+function get_post_meta($id,$key,$single=false){return '';}
 function number_format_i18n($v,$dec=0){return number_format((float)$v,$dec,',',' ');} function get_bloginfo($v=''){return 'fixture-WordPress';}
 function disabled($a,$b=true,$echo=true){$s=$a==$b?' disabled="disabled"':''; if($echo)echo $s; return $s;}
 function checked($a,$b=true,$echo=true){$s=$a==$b?' checked="checked"':''; if($echo)echo $s; return $s;}

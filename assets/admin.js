@@ -32,6 +32,10 @@
         $('#amf-progress').attr('data-scan-id', status.id);
         var phaseNames = { media: 'Inventaire des médias', usage_posts: 'Recherche des utilisations', usage_postmeta: 'Recherche des utilisations', usage_termmeta: 'Recherche des utilisations', usage_options: 'Recherche des utilisations', files: 'Vérification des fichiers', woo: 'Vérification des produits', finalize: 'Finalisation' };
         var phaseLabel = status.status === 'complete' ? 'Analyse terminée' : (phaseNames[status.phase] || 'Analyse en cours');
+        var phaseOrder = ['media', 'usage_posts', 'usage_postmeta', 'usage_termmeta', 'usage_options', 'files', 'woo', 'finalize'];
+        var phasePosition = phaseOrder.indexOf(status.phase);
+        var stepNumber = status.status === 'complete' ? phaseOrder.length : Math.max(1, phasePosition + 1);
+        $('#amf-phase-step').text(status.status === 'complete' ? '8/8 étapes terminées' : ' Étape ' + stepNumber + '/' + phaseOrder.length);
         $('#amf-phase-label').text(phaseLabel);
         $('#amf-progress-bar').css('width', pct + '%').toggleClass('amf-indeterminate', total === 0 && status.status !== 'complete' && running);
         $('#amf-progress-track').attr('aria-valuenow', pct).attr('aria-valuetext', phaseLabel + ' : ' + pct + ' %');
@@ -594,5 +598,12 @@
 
     refreshFamilyBulkControls();
     render(current);
+    if (AMF_DATA.autoRestart && $('#amf-start-scan').length) {
+        // Consume the nonce-bearing URL before confirmation or any retry.
+        if (window.history && window.history.replaceState && AMF_DATA.dashboardUrl) {
+            window.history.replaceState(null, '', AMF_DATA.dashboardUrl);
+        }
+        $('#amf-start-scan').trigger('click');
+    }
     if (current && current.exists && current.status !== 'complete') $('#amf-progress-message').text(defaultMessage(current));
 })(jQuery);
