@@ -1,4 +1,4 @@
-/* Benfou 2.3.8: accessible light-grey header, monochrome interface, restrained lime accent. */
+/* Benfou 2.3.9: transparent brand logo, visible historical source note. */
 .amf-wrap{--amf-primary:#171717;--amf-ink:#181818;--amf-muted:#626262;--amf-border:#dedede;--amf-lime:#c0fa39;--amf-surface:#fff;color:var(--amf-ink);font-family:Montserrat,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light}
 .amf-wrap h1,.amf-wrap h2,.amf-wrap h3,.amf-wrap h4{color:var(--amf-ink);letter-spacing:-.025em}
 .amf-wrap p,.amf-wrap .description{color:var(--amf-muted)}
@@ -6,8 +6,8 @@
 .amf-wrap a:hover{color:#000;text-decoration-color:#000}
 .amf-wrap .amf-client-header{background:#ebebeb;border:1px solid #d8d8d8;border-radius:10px;padding:21px 24px;margin:18px 0 20px;gap:16px}
 .amf-wrap .amf-brand-heading{gap:22px;flex-wrap:nowrap;min-width:0}
-.amf-wrap .amf-brand-logo{display:inline-flex;flex-shrink:0;align-items:center;background:#fff;border:1px solid #dedede;border-radius:6px;padding:8px 12px}
-.amf-wrap .amf-brand-logo img{display:block;width:115px;height:auto;max-width:100%}
+.amf-wrap .amf-brand-logo{display:inline-flex;flex-shrink:0;align-items:center;background:transparent;border:0;border-radius:0;padding:0}
+.amf-wrap .amf-brand-logo img{display:block;width:135px;height:auto;max-width:100%}
 .amf-wrap .amf-brand-divider{height:40px;width:1px;background:#bcbcbc;flex-shrink:0}
 .amf-wrap .amf-client-header h1{color:#171717!important;font-size:23px;font-weight:700;gap:10px;flex-wrap:wrap;margin:0}
 .amf-wrap .amf-client-header .amf-version{color:#282828!important;background:#f9f9f9;border-color:#c5c5c5;font-size:10px;letter-spacing:.02em}
@@ -75,3 +75,17 @@ body.wp-admin .amf-wrap .button:disabled,.amf-wrap .button:disabled,.amf-wrap .b
 @media(max-width:420px){.amf-wrap .amf-brand-logo img{width:80px}.amf-wrap .amf-brand-heading{gap:10px}.amf-wrap .amf-brand-divider{display:none}.amf-wrap .amf-client-header{padding:14px 10px}.amf-wrap .amf-client-header h1{font-size:19px}.amf-wrap .amf-version{padding:3px 6px}}
 
 .amf-wrap .nav-tab-wrapper .nav-tab{text-decoration:none}
+/* Historical WordPress attachment: permanent context for a manual usage check. */
+.amf-wrap .amf-history-note{display:block;margin:18px 0 16px;padding:16px 18px;border:1px solid #cfcfcf;border-left:4px solid #292929;border-radius:8px;background:#f0f0f0;box-shadow:none}
+.amf-wrap .amf-history-note-header{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;color:#1b1b1b;line-height:1.4}
+.amf-wrap .amf-history-note-header .dashicons{color:#3a3a3a;font-size:19px;width:20px;height:20px}
+.amf-wrap .amf-history-note-header strong{font-size:14px;font-weight:750}
+.amf-wrap .amf-history-note-tag{font-size:10px;font-weight:700;line-height:1.5;letter-spacing:.03em;color:#555;border:1px solid #cecece;background:#fff;padding:3px 8px;border-radius:99px}
+.amf-wrap .amf-history-note-source{margin:11px 0 7px;font-size:13px;line-height:1.6;color:#272727;overflow-wrap:anywhere}
+.amf-wrap .amf-history-note-source>span:first-child{color:#565656}
+.amf-wrap .amf-history-note-source>a:not(.amf-history-note-edit){font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.amf-wrap .amf-history-note-state{color:#646464;font-size:12px}
+.amf-wrap .amf-history-note-edit{display:inline-flex;margin-left:8px;font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.amf-wrap .amf-history-note>p.description{margin:7px 0 0;font-size:12px;line-height:1.65;color:#4d4d4d}
+.amf-wrap .amf-history-note>p.description strong{color:#262626}
+@media(max-width:782px){.amf-wrap .amf-history-note{padding:13px 14px}.amf-wrap .amf-history-note-edit{margin-left:0}}

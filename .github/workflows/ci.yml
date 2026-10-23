@@ -31,6 +31,7 @@ jobs:
           php tests/updater-test.php
           php tests/ui-v237-test.php
           python3 tests/ui-v238-test.py
+          php tests/ui-v239-test.php
           for v in 2.3.3 2.3.5 2.3.6 2.3.7; do php tests/transition-test.php "$v"; done
           php tests/transition-test.php 2.3.3 audit-medias-2.3.3/audit-medias.php
       - name: Interface fixtures (simulated WordPress)
