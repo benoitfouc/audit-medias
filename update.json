@@ -2,12 +2,12 @@
   "schema": 1,
   "slug": "audit-medias",
   "channel": "stable",
-  "version": "2.3.9",
-  "tag": "v2.3.9",
-  "package": "https://github.com/benoitfouc/audit-medias/releases/download/v2.3.9/audit-medias-v2.3.9.zip",
-  "sha256": "3fbb905dafabae7cb9e021ec96b5e17b45178d14f6057ed79d3983b8f542c70c",
-  "size": 112459,
+  "version": "2.3.10",
+  "tag": "v2.3.10",
+  "package": "https://github.com/benoitfouc/audit-medias/releases/download/v2.3.10/audit-medias-v2.3.10.zip",
+  "sha256": "0c8b4f170e66f6eaff2138860c1ac852b710faf92b90a6101d2362713c8c7c3c",
+  "size": 114355,
   "requires": "6.2",
   "requires_php": "7.4",
-  "description": "# Audit Médias v2.3.9\n\n## Rattachement historique toujours visible\n- Dans le détail d'une famille, « Ancien rattachement WordPress » devient un encadré permanent et plus lisible, avec le contenu autrefois associé et, si disponible, des liens pour le contrôler.\n- Un ancien rattachement WordPress est un **indice de contexte**, pas une preuve d'utilisation actuelle. La distinction entre rattachement historique et vraie référence est conservée.\n\n## En-tête Benfou\n- Le logo vectoriel original est désormais présenté directement sur le fond gris `#EBEBEB`, sans cadre ni fond blanc ajouté ; le fichier SVG est déjà transparent.\n\nLe moteur d'audit, la détection des références, la sécurité des suppressions, les filtres, les réglages et les résultats existants ne changent pas. Aucun nouvel audit requis depuis 2.3.8.\n"
+  "description": "# Audit Médias v2.3.10\n\n## Contrôle et progression des audits\n- Le lien « Relancer l’analyse » d'un audit obsolète ouvre le tableau de bord et déclenche le vrai redémarrage AJAX après confirmation ; le lien est protégé par un nonce WordPress.\n- Affichage « Étape X/8 » pendant les scans, en complément du compteur et de la barre propres à chaque étape.\n- Vue d’ensemble enrichie avec médias référencés, fichiers hors médiathèque, familles non associées à examiner, raccourcis utiles et date du dernier audit.\n- Après une analyse terminée, le bouton « Parcourir les médias » utilise une touche de vert Benfou `#C0FA39`.\n\n## Références et journal\n- Priorité aux modèles Elementor Header/Footer dans les deux emplacements immédiatement visibles. Les autres références restent consultables, sans modification des comptages ni du moteur de détection.\n- Identification plus claire des réglages et kits Elementor.\n- Dans « Afficher les détails » d'une mise à jour, titres du journal moins hauts et lien vers l'historique complet du dépôt GitHub.\n\nCette version ne modifie ni les règles de suppression, ni le schéma de base de données, ni les résultats enregistrés. Aucun nouvel audit n'est imposé depuis la version 2.3.9, sauf si un audit antérieur était déjà obsolète.\n"
 }
