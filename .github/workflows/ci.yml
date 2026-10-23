@@ -29,12 +29,13 @@ jobs:
         run: |
           set -euo pipefail
           php tests/updater-test.php
+          php tests/ui-v237-test.php
           for v in 2.3.3 2.3.5 2.3.6 2.3.7; do php tests/transition-test.php "$v"; done
           php tests/transition-test.php 2.3.3 audit-medias-2.3.3/audit-medias.php
       - name: Interface fixtures (simulated WordPress)
         run: |
           set -euo pipefail
-          for args in 'tab=files' 'tab=dashboard' 'tab=settings' 'tab=woo' 'tab=errors' 'tab=media' 'tab=files&no_woo=1' 'tab=files&readonly=1' 'tab=files&empty=1' 'tab=files&stale=1' 'tab=files&old_scan=1' 'tab=dashboard&running=1' 'tab=dashboard&no_scan=1' 'tab=settings&no_scan=1' 'tab=files&assoc=unassociated&other_usage=none' 'tab=files&xss=1' 'tab=settings&amf_update_checked=1&update_error=1'; do
+          for args in 'tab=files' 'tab=dashboard' 'tab=settings' 'tab=woo' 'tab=errors' 'tab=media' 'tab=files&no_woo=1' 'tab=files&readonly=1' 'tab=files&empty=1' 'tab=files&stale=1' 'tab=files&old_scan=1' 'tab=dashboard&running=1' 'tab=dashboard&no_scan=1' 'tab=settings&no_scan=1' 'tab=files&assoc=unassociated&other_usage=none' 'tab=files&xss=1' 'tab=settings&amf_update_checked=1&update_error=1' 'tab=files&usage=unused' 'tab=files&usage=unused&no_woo=1' 'tab=files&usage=unused&stale=1' 'tab=woo&type=variation&role=gallery'; do
             php tests/render-fixture.php "$args" > /dev/null
             printf 'PASS %s\n' "$args"
           done
