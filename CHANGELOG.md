@@ -1,5 +1,13 @@
 # Historique des versions — Audit Médias
 
+## 2.3.8 - 23 octobre 2026
+
+### Confort de lecture
+- En-tête gris clair `#EBEBEB` avec titres, sous-titre et numéro de version foncés et lisibles, sans toucher aux alertes de suppression.
+- Les deux filtres **Utilisation** et **Association des fichiers** figurent maintenant sur une seule ligne avec la recherche, sans panneau « Filtres avancés ».
+- Les filtres et anciennes URL restent fonctionnels, de même que la recherche, les tris et les actions groupées.
+- Aucune modification du moteur d'audit, de la base de données ou de la sécurité des suppressions. Aucun nouvel audit exigé depuis 2.3.7.
+
 ## 2.3.7 - 23 octobre 2026
 
 ### Une interface plus simple
