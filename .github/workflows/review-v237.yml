@@ -1,0 +1,49 @@
+name: Review prepared v2.3.7 sources
+on:
+  push:
+    branches: ['release/v2.3.7']
+    paths: ['.github/workflows/review-v237.yml']
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Inspect prepared payload without executing it
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, json, zlib, zipfile
+          root = Path.cwd()
+          out = root / 'review-output'
+          out.mkdir()
+          parts = sorted((root / '.release-v237').glob('part-*.b64'))
+          report = {'parts': [{'name':p.name,'size':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in parts]}
+          try:
+              payload = base64.b64decode(''.join(p.read_text().strip() for p in parts), validate=True)
+              decoded = zlib.decompress(payload)
+              report['decoded_bytes'] = len(decoded)
+              report['decoded_sha256'] = hashlib.sha256(decoded).hexdigest()
+              (out/'prepared.json').write_bytes(decoded)
+              doc = json.loads(decoded)
+              report['payload_type'] = type(doc).__name__
+              report['top_level'] = list(doc)[:30] if isinstance(doc,dict) else len(doc)
+          except Exception as exc:
+              report['error'] = str(exc)
+          (out/'report.json').write_text(json.dumps(report,indent=2))
+          with zipfile.ZipFile(out/'sources.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for path in sorted(root.rglob('*')):
+                  rel = path.relative_to(root)
+                  if path.is_file() and not path.is_symlink() and '.git' not in rel.parts and 'review-output' not in rel.parts:
+                      z.write(path,rel.as_posix())
+          print(json.dumps(report,indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: audit-medias-v237-source-review
+          path: review-output/
+          retention-days: 3
+          if-no-files-found: error
