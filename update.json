@@ -2,12 +2,12 @@
   "schema": 1,
   "slug": "audit-medias",
   "channel": "stable",
-  "version": "2.3.8",
-  "tag": "v2.3.8",
-  "package": "https://github.com/benoitfouc/audit-medias/releases/download/v2.3.8/audit-medias-v2.3.8.zip",
-  "sha256": "1646620318d0ccbfa3905eb860651d0f2baa41a99d8769d861290928d3a39c89",
-  "size": 111540,
+  "version": "2.3.9",
+  "tag": "v2.3.9",
+  "package": "https://github.com/benoitfouc/audit-medias/releases/download/v2.3.9/audit-medias-v2.3.9.zip",
+  "sha256": "3fbb905dafabae7cb9e021ec96b5e17b45178d14f6057ed79d3983b8f542c70c",
+  "size": 112459,
   "requires": "6.2",
   "requires_php": "7.4",
-  "description": "# Audit Médias v2.3.8\n\n## Interface corrigée\n- Bandeau Benfou en gris clair **#EBEBEB**, avec titre, sous-titre et version visibles en texte foncé.\n- Les deux filtres **Toutes les utilisations** et **Tous les fichiers** sont côte à côte avec le champ de recherche ; retrait du panneau « Filtres avancés ».\n- Sur petit écran, les filtres peuvent passer sur plusieurs lignes sans faire déborder la page.\n\nAucune modification de la détection des références, des règles de suppression, des réglages ou des résultats de scan. Aucune nouvelle analyse n'est imposée.\n\n**Rappel :** aucune utilisation détectée n'est pas une garantie d'absence d'utilisation. Vérifiez avant toute suppression.\n"
+  "description": "# Audit Médias v2.3.9\n\n## Rattachement historique toujours visible\n- Dans le détail d'une famille, « Ancien rattachement WordPress » devient un encadré permanent et plus lisible, avec le contenu autrefois associé et, si disponible, des liens pour le contrôler.\n- Un ancien rattachement WordPress est un **indice de contexte**, pas une preuve d'utilisation actuelle. La distinction entre rattachement historique et vraie référence est conservée.\n\n## En-tête Benfou\n- Le logo vectoriel original est désormais présenté directement sur le fond gris `#EBEBEB`, sans cadre ni fond blanc ajouté ; le fichier SVG est déjà transparent.\n\nLe moteur d'audit, la détection des références, la sécurité des suppressions, les filtres, les réglages et les résultats existants ne changent pas. Aucun nouvel audit requis depuis 2.3.8.\n"
 }
