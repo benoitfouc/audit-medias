@@ -50,11 +50,15 @@ jobs:
               p.write_bytes(base64.b64decode(content,validate=True))
           for name, digest in doc['sha256'].items():
               assert hashlib.sha256((root/name).read_bytes()).hexdigest() == digest, name
+          css=root/'assets/admin-brand.css'
+          suffix='\n.amf-wrap .nav-tab-wrapper .nav-tab{text-decoration:none}\n'
+          text=css.read_text()
+          assert text.endswith(suffix+suffix)
+          css.write_text(text[:-len(suffix)])
+          assert hashlib.sha256(css.read_bytes()).hexdigest() == 'b2ab0638d34dfd6bf374f21666fc5cf24de274e11f5b1331c0041f8fff6f0075'
           for name in ('.candidate-v237','.release-v237'):
               shutil.rmtree(root/name)
-          for name in ('review-v237.yml','finalize-v237.yml'):
-              (root/'.github/workflows'/name).unlink()
-          print('VERIFIED: all 19 changed source files match the reviewed candidate exactly')
+          print('VERIFIED: reviewed source reconstructed, redundant CSS declaration removed')
           PY
       - name: Syntax and behavioral regressions
         run: |
@@ -70,15 +74,18 @@ jobs:
           done
           python3 tools/build-manifest.py --tag v2.3.7
           python3 tests/package-test.py
-      - name: Export package for full file and ZIP metadata comparison
+          python3 -c "import hashlib,pathlib; assert hashlib.sha256(pathlib.Path('dist/audit-medias-v2.3.7.zip').read_bytes()).hexdigest() == '551672a3ee4fb75145715c9eaa497623f55e7e1758493b574f28041af0470ffd'"
+      - name: Export verified canonical package
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: audit-medias-v237-verified-package
           path: dist/
           retention-days: 3
           if-no-files-found: error
-      - name: Commit only verified source on release branch
+      - name: Commit code only; workflow changes use the maintainer connection
         run: |
+          git restore -- .github/workflows
+          find tools -type d -name __pycache__ -prune -exec rm -rf {} +
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
