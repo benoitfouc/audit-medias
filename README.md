@@ -12,7 +12,7 @@
 
 Développé et maintenu par **[Benfou](https://www.benfou.fr/)**
 
-[Fonctionnalités](#fonctionnalités) · [Installation](#installation) · [Sécurité](#suppression-et-sécurité) · [Versions](../../releases)
+[Fonctionnalités](#fonctionnalités) · [Installation](#installation) · [Sécurité](#suppression-et-sécurité) · [Versions](#historique-des-versions)
 
 </div>
 
